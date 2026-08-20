@@ -15,9 +15,11 @@ import base64
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Configuration
-TEMPLATE_PATH = 'TEMPLETE .png'
-OUTPUT_DIR = 'generated_reports'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Configuration (absolute paths for Render / Gunicorn)
+TEMPLATE_PATH = os.path.join(BASE_DIR, 'TEMPLETE .png')
+OUTPUT_DIR = os.path.join(BASE_DIR, 'generated_reports')
 
 # Create output directory if it doesn't exist
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -43,19 +45,19 @@ def health_check():
 @app.route('/', methods=['GET'])
 def home_page():
     """Serve the screening app"""
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard_page():
     """Serve the analytics dashboard"""
-    return send_from_directory('.', 'dashboard.html')
+    return send_from_directory(BASE_DIR, 'dashboard.html')
 
 
 @app.route('/records', methods=['GET'])
 def records_page():
     """Serve the master records page"""
-    return send_from_directory('.', 'records.html')
+    return send_from_directory(BASE_DIR, 'records.html')
 
 
 @app.route('/api/generate-image', methods=['POST'])
@@ -387,8 +389,10 @@ def download_file(filename):
 def project_file(filename):
     """Serve local HTML/image assets used by the static pages"""
     allowed_extensions = ('.html', '.png', '.jpg', '.jpeg', '.json', '.js', '.css')
-    if filename.lower().endswith(allowed_extensions) and os.path.exists(filename):
-        return send_from_directory('.', filename)
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(BASE_DIR, safe_name)
+    if safe_name.lower().endswith(allowed_extensions) and os.path.exists(file_path):
+        return send_from_directory(BASE_DIR, safe_name)
     return jsonify({'error': 'File not found'}), 404
 
 
