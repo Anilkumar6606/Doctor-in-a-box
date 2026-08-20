@@ -1,0 +1,18 @@
+{
+  "company": "visys cloud technology",
+  "screeningId": "DIB-SCR-000001",
+  "generatedAt": "2026-08-12T00:00:00.000Z",
+  "patient": {
+    "name": "",
+    "contact": "",
+    "email": "",
+    "date": "",
+    "time": "",
+    "camp": "",
+    "location": ""
+  },
+  "tests": [
+    { "label": "Blood Pressure", "value": "120/80", "unit": "mmHg" },
+    { "label": "Blood Sugar", "value": "96", "unit": "mg/dL" }
+  ]
+}

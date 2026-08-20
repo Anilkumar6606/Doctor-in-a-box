@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Doctor in a Box · Screening</title>
+  <!-- Font & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="nav.css">
+  <!-- PDF & Image Download Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      background: #f4f8fc;
+      color: #0b2b4a;
+      padding: 0 12px 40px;
+      min-height: 100vh;
+    }
+    .app-container {
+      width: min(100%, 1020px);
+      max-width: 1020px;
+      margin: 18px auto 0;
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 12px 40px rgba(0,20,50,0.08);
+      padding: 20px 18px 30px;
+      transition: all 0.2s;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: -0.5px;
+      color: #0b2b4a;
+      margin-bottom: 16px;
+    }
+    .logo-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .logo-box {
+      background: #f8fbff;
+      border: 1px solid #e3edf7;
+      border-radius: 14px;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    .logo-box img {
+      max-width: 100%;
+      max-height: 48px;
+      object-fit: contain;
+      display: block;
+    }
+    .brand i { color: #2a7de1; font-size: 2rem; }
+    .brand span { color: #0b2b4a; }
+    .subhead { font-size: 0.9rem; color: #4a6a85; font-weight: 500; margin-top: -8px; margin-bottom: 18px; border-left: 4px solid #2a7de1; padding-left: 12px; }
+    .card { background: white; border-radius: 24px; padding: 18px 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0, 20, 40, 0.04); border: 1px solid #e9f0f6; }
+    .card-title { font-weight: 600; font-size: 1.1rem; color: #0b2b4a; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .card-title i { color: #2a7de1; width: 24px; text-align: center; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+    .col { flex: 1 0 calc(50% - 10px); min-width: 140px; }
+    label { font-size: 0.8rem; font-weight: 600; color: #1f4a6e; display: block; margin-bottom: 4px; letter-spacing: 0.3px; }
+    input, select { width: 100%; padding: 12px 14px; border: 1.5px solid #dde7ef; border-radius: 16px; font-size: 0.95rem; background: white; transition: 0.2s; outline: none; color: #0b2b4a; }
+    input:focus, select:focus { border-color: #2a7de1; box-shadow: 0 0 0 3px rgba(42, 125, 225, 0.15); }
+    .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 4px; }
+    .checkbox-item { display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 0.95rem; background: #f6faff; padding: 10px 12px; border-radius: 14px; border: 1px solid #e2ecf5; transition: 0.1s; width: 100%; }
+    .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: #2a7de1; margin: 0; border-radius: 6px; }
+    .checkbox-item label { margin-bottom: 0; flex: 1; }
+    .checkbox-item.checked { background: #e7f0fe; border-color: #2a7de1; }
+    .price-badge { background: #e9f7ef; color: #16633a; border: 1px solid #c6ead5; border-radius: 999px; padding: 3px 10px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; }
+    .price-badge.free { background: #eef4fa; color: #31516b; border-color: #d8e5ef; }
+    .price-badge.package { background: #fff7e6; color: #835600; border-color: #f4d38c; }
+    .summary-total { background: #0b2b4a; color: #fff; border-radius: 16px; padding: 12px 16px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 800; }
+    .summary-total span:last-child { font-size: 1.25rem; }
+    .btn { border: none; background: #eef4fa; padding: 12px 20px; border-radius: 40px; font-weight: 600; font-size: 0.95rem; color: #0b2b4a; display: inline-flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: 0.15s; width: auto; border: 1px solid transparent; }
+    .btn-primary { background: #0b2b4a; color: white; box-shadow: 0 4px 10px rgba(11,43,74,0.15); }
+    .btn-primary i { color: white; }
+    .btn-primary:hover { background: #1a3f62; }
+    .btn-outline { background: transparent; border: 1.5px solid #cbdde9; }
+    .btn-success { background: #1f8b4c; color: white; }
+    .btn-success i { color: white; }
+    .btn-whatsapp { background: #25D366; color: white; }
+    .btn-whatsapp i { color: white; }
+    .btn-block { width: 100%; justify-content: center; }
+    .btn-sm { padding: 8px 16px; font-size: 0.8rem; }
+    .result-card { background: #f9fcff; border-radius: 20px; padding: 14px 18px; border-left: 5px solid #2a7de1; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .result-card .label { font-weight: 500; color: #1f4a6e; font-size: 0.9rem; }
+    .result-card .value { font-weight: 700; font-size: 1.25rem; color: #0b2b4a; letter-spacing: -0.2px; }
+    .result-card .unit { font-weight: 400; color: #5b7f9b; font-size: 0.8rem; margin-left: 4px; }
+    .report-preview { background: white; padding: 16px; border-radius: 28px; border: 1px solid #dce8f2; margin: 20px 0; }
+    .report-header { text-align: center; border-bottom: 2px dashed #d0e0ed; padding-bottom: 14px; margin-bottom: 18px; }
+    .report-header h2 { font-weight: 700; color: #0b2b4a; letter-spacing: -0.5px; font-size: 1.5rem; }
+    .report-header h2 i { color: #2a7de1; margin-right: 6px; }
+    .report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; font-size: 0.85rem; color: #1f4a6e; margin-top: 6px; }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .history-table th { text-align: left; padding: 10px 4px 6px 0; color: #2f5a7a; border-bottom: 1px solid #dde7ef; font-weight: 600; }
+    .history-table td { padding: 10px 4px 10px 0; border-bottom: 1px solid #ecf3f9; }
+    .badge { background: #e2ecf5; border-radius: 40px; padding: 2px 12px; font-size: 0.7rem; font-weight: 600; color: #1f4a6e; }
+    .action-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mt-2 { margin-top: 12px; }
+    .mt-3 { margin-top: 20px; }
+    .mb-1 { margin-bottom: 8px; }
+    .flex { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .text-center { text-align: center; }
+    .text-muted { color: #5a7d99; }
+    .hidden { display: none !important; }
+    .gap-2 { gap: 10px; }
+    .pill { background: #eaf2fa; border-radius: 40px; padding: 4px 14px; font-size: 0.7rem; font-weight: 600; color: #1f5b7a; }
+
+    .rr-paper {
+      border: 1px solid #cfe1f4;
+      border-radius: 18px;
+      padding: 12px;
+      background: #ffffff;
+      box-shadow: 0 8px 22px rgba(11, 43, 74, 0.06);
+    }
+    .rr-logo-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .rr-logo-cell {
+      border: 1px solid #dde9f5;
+      border-radius: 12px;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      background: #fff;
+    }
+    .rr-logo-cell img {
+      max-width: 100%;
+      max-height: 56px;
+      object-fit: contain;
+    }
+    .rr-banner {
+      margin-top: 6px;
+      margin-bottom: 12px;
+      background: #0f49a8;
+      border-radius: 14px;
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-size: 1.5rem;
+      letter-spacing: 0.01em;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .rr-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .rr-card {
+      border: 1px solid #d3e5f8;
+      border-radius: 14px;
+      background: #fcfeff;
+      overflow: hidden;
+    }
+    .rr-card-head {
+      padding: 10px 12px;
+      color: #0f4dab;
+      font-weight: 800;
+      border-bottom: 1px solid #e2edf8;
+      font-size: 1rem;
+    }
+    .rr-card-head.green {
+      color: #0f9b72;
+    }
+    .rr-list-row {
+      display: grid;
+      grid-template-columns: 1.1fr 1.9fr;
+      gap: 8px;
+      border-bottom: 1px solid #edf3fb;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+    .rr-list-row:last-child {
+      border-bottom: none;
+    }
+    .rr-key {
+      font-weight: 700;
+      color: #164c98;
+    }
+    .rr-value {
+      font-weight: 600;
+      color: #102844;
+    }
+    .rr-section-title {
+      margin: 6px 0 10px;
+      text-align: center;
+      font-weight: 800;
+      color: #113f96;
+      font-size: 1.25rem;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+    }
+    .rr-results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .rr-result {
+      border: 1px solid #d5e6f8;
+      border-radius: 16px;
+      background: #f8fbff;
+      padding: 12px;
+      min-height: 110px;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .rr-result.bp {
+      background: #fff8fa;
+      border-color: #ffd8e3;
+    }
+    .rr-result.sugar {
+      background: #f5fbff;
+      border-color: #cfe4ff;
+    }
+    .rr-result-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      border: 1px solid #d7e8fb;
+      background: #fff;
+    }
+    .rr-result-name {
+      font-weight: 800;
+      color: #1146a0;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .rr-result-value {
+      font-weight: 800;
+      color: #101d31;
+      font-size: 2rem;
+      line-height: 1.05;
+    }
+    .rr-result-unit {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #4a6382;
+      margin-left: 6px;
+    }
+    .rr-table-wrap {
+      border: 1px solid #d2e3f6;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .rr-table-title {
+      background: #0f59be;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.05rem;
+      padding: 8px 12px;
+    }
+    .rr-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+    .rr-table th,
+    .rr-table td {
+      border: 1px solid #e1ecf8;
+      padding: 10px 8px;
+      text-align: left;
+    }
+    .rr-table th {
+      background: #eef5fd;
+      color: #0f4dab;
+      font-weight: 800;
+    }
+    .rr-note,
+    .rr-office {
+      border: 1px solid #d2e3f6;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #f7fbff;
+      margin-bottom: 10px;
+      color: #15345a;
+      font-size: 0.96rem;
+      line-height: 1.45;
+    }
+    .rr-note b,
+    .rr-office b {
+      color: #0f4dab;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    
+    /* MODAL STYLES */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px 10px;
+    }
+    .modal-overlay.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e8f0f7;
+    }
+    .modal-header h2 {
+      margin: 0;
+      color: #0b2b4a;
+      font-size: 1.5rem;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .modal-close:hover {
+      color: #0b2b4a;
+    }
+    .detail-section {
+      margin-bottom: 20px;
+    }
+    .detail-section-title {
+      font-weight: 700;
+      color: #0b2b4a;
+      margin-bottom: 12px;
+      font-size: 1rem;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #dbe5f2;
+    }
+    .detail-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 15px;
+      padding: 8px 0;
+      align-items: start;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #1f4a6e;
+      font-size: 0.9rem;
+    }
+    .detail-value {
+      color: #0b2b4a;
+      font-size: 0.95rem;
+    }
+    .detail-value-muted {
+      color: #52617a;
+      font-size: 0.9rem;
+    }
+    .test-result-item {
+      background: #f5f8fc;
+      border-left: 3px solid #1677ff;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .test-result-item .label {
+      font-weight: 600;
+      color: #0b2b4a;
+    }
+    .test-result-item .value {
+      color: #1677ff;
+      font-weight: 700;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px solid #e8f0f7;
+    }
+    .modal-actions .btn {
+      flex: 1;
+    }
+    .btn-edit {
+      background: #1677ff;
+      color: white;
+      border: none;
+    }
+    .btn-edit:hover {
+      background: #0c5ab1;
+    }
+    .btn-delete {
+      background: #ff4d4f;
+      color: white;
+      border: none;
+    }
+    .btn-delete:hover {
+      background: #d9363e;
+    }
+    .btn-close {
+      background: #f0f0f0;
+      color: #333;
+      border: none;
+    }
+    .btn-close:hover {
+      background: #e0e0e0;
+    }
+    
+    @media (max-width: 420px) {
+      .app-container { width: 100%; padding: 16px 12px; }
+      .col { flex: 1 0 100%; }
+      .rr-grid, .rr-results { grid-template-columns: 1fr; }
+      .rr-banner { font-size: 1.2rem; }
+      .rr-result-value { font-size: 1.8rem; }
+      .modal { padding: 20px; }
+      .detail-row { grid-template-columns: 1fr; gap: 5px; }
+    }
+  </style>
+</head>
+<body>
+<nav class="site-nav" aria-label="Main navigation">
+  <div class="site-nav-inner">
+    <a class="site-nav-brand" href="/"><i class="fas fa-heartbeat"></i> Doctor in a Box</a>
+    <div class="site-nav-links">
+      <a id="navHome" href="/">Home</a>
+      <a id="navScreening" href="/?view=screening">Screening</a>
+      <a href="/records">Records</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </div>
+</nav>
+<div class="app-container" id="app">
+  <div class="logo-strip" aria-label="Brand logos">
+    <div class="logo-box"><img src="visys-cloud .png" alt="Visys Cloud logo"></div>
+    <div class="logo-box"><img src="doctor in a box .jpeg" alt="Doctor in a Box logo"></div>
+  </div>
+  <div class="brand"><i class="fas fa-heartbeat"></i><span>Doctor in a Box</span></div>
+  <div class="subhead"><i class="fas fa-clinic-medical" style="margin-right:8px;"></i> field screening · quick report</div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboardView">
+    <div class="card" style="background: #e2edfb; border: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-weight: 600; font-size: 1.2rem;">👋 Welcome</div>
+          <div style="color: #1f4a6e; font-size: 0.9rem;">start a new health checkup</div>
+          <div style="color: #1f4a6e; font-size: 0.88rem; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+            <span><i class="fas fa-calendar-week"></i> <span id="dashDay">—</span></span>
+            <span><i class="fas fa-calendar-day"></i> <span id="dashDate">—</span></span>
+            <span><i class="fas fa-clock"></i> <span id="dashTime">—</span></span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="newScreeningBtn"><i class="fas fa-plus-circle"></i> New Screening</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-chart-simple"></i> Dashboard</div>
+      <div class="row" style="margin-bottom:14px;">
+        <div class="col">
+          <label for="campaignLocation">🏕️ Campaign Location</label>
+          <input id="campaignLocation" placeholder="Enter campaign location (e.g. KK Park)">
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="background:#f0f7fe; border-radius:20px; padding:12px 16px; flex:1; min-width:100px;"><span id="dashTodayCheckups" style="font-size:1.6rem; font-weight:700;">0</span><br><span class="text-muted" style="font-size:0.75rem;">Today Checkups</span><br><span class="text-muted" style="font-size:0.68rem;">people screened today</span></div>
+        <div style="background:#f0f7fe; border-radius:20px; padding:12px 16px; flex:1; min-width:100px;"><span id="dashTotalCheckups" style="font-size:1.6rem; font-weight:700;">0</span><br><span class="text-muted" style="font-size:0.75rem;">Total Checkups</span><br><span class="text-muted" style="font-size:0.68rem;">people screened overall</span></div>
+      </div>
+      <div style="margin-top:10px; padding:10px 14px; background:#f6faff; border-radius:14px; font-size:0.82rem; color:#4a6a85; line-height:1.5;">
+        <i class="fas fa-circle-info"></i> <strong>Tests done:</strong> <span id="dashTodayTests">0</span> today · <span id="dashTotalTests">0</span> total
+        <span style="display:block; margin-top:4px; font-size:0.75rem;">1 checkup = 1 person. Each person can have multiple tests (BP, Sugar, etc.).</span>
+      </div>
+      <div class="card-title" style="margin-top:14px; margin-bottom:10px; font-size:1rem;"><i class="fas fa-credit-card"></i> Payment Details</div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="background:#e8f4ff; border-radius:20px; padding:12px 16px; flex:1; min-width:120px;">
+          <span id="dashOnlineAmount" style="font-size:1.35rem; font-weight:700;">₹ 0</span><br>
+          <span class="text-muted" style="font-size:0.75rem;">Online</span><br>
+          <span class="text-muted" style="font-size:0.7rem;">Today: <span id="dashTodayOnlineAmount">₹ 0</span></span>
+        </div>
+        <div style="background:#eefaf1; border-radius:20px; padding:12px 16px; flex:1; min-width:120px;">
+          <span id="dashCashAmount" style="font-size:1.35rem; font-weight:700;">₹ 0</span><br>
+          <span class="text-muted" style="font-size:0.75rem;">Cash</span><br>
+          <span class="text-muted" style="font-size:0.7rem;">Today: <span id="dashTodayCashAmount">₹ 0</span></span>
+        </div>
+      </div>
+      <div class="mt-2 flex" style="justify-content: space-between;"><span><i class="fas fa-calendar-day"></i> Camp: <span id="dashCampName">Not set</span></span><span class="pill" id="dashCampActive">0 today</span></div>
+    </div>
+    <div class="flex" style="gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="showHistory()"><i class="fas fa-clock-rotate-left"></i> History</button>
+      <a class="btn btn-outline btn-sm" href="/records"><i class="fas fa-folder-open"></i> All Records</a>
+    </div>
+    <div id="historyPreview" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- SCREENING FORM -->
+  <div id="screeningForm" class="hidden">
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user"></i> Person Details</div>
+      <div class="row"><div class="col"><label>👤 Full Name *</label><input id="pName" placeholder="Please enter your full name"></div><div class="col"><label>📞 Contact *</label><input id="pContact" placeholder="Please enter your mobile number"></div></div>
+      <div class="row"><div class="col"><label>✉️ Email</label><input id="pEmail" placeholder="Enter email (optional)"></div><div class="col"><label>🏕️ Camp / Event</label><input id="pCamp" placeholder="Same as campaign location on dashboard"></div></div>
+      <div class="row"><div class="col"><label>📍 Location</label><input id="pLocation" placeholder="Enter location (optional)"></div><div class="col"><label>🎂 Age</label><input id="pAge" type="number" min="1" max="120" placeholder="Enter age (optional)"></div></div>
+      <div class="row"><div class="col"><label>⚧ Gender</label><select id="pGender"><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div><div class="col"><label>💳 Payment Method</label><select id="pPaymentMethod"><option value="">Select payment method</option><option value="Online">Online</option><option value="Cash">Cash</option></select></div></div>
+      <div class="row"><div class="col"><label>💬 Patient WhatsApp</label><input id="pPatientWa" placeholder="Country code + number (optional)"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="fas fa-list-check"></i> Select Checkups</div>
+      <button class="btn btn-outline btn-sm mb-1" id="allCheckupsBtn"><i class="fas fa-check-double"></i> All Mark</button>
+      <div class="checkbox-grid" id="checkupGrid"></div>
+    </div>
+
+    <div class="card" id="resultsContainer">
+      <div class="card-title"><i class="fas fa-flask"></i> Enter Results</div>
+      <div id="dynamicResults"></div>
+    </div>
+
+    <div class="card" id="summaryCard">
+      <div class="card-title"><i class="fas fa-table"></i> Summary</div>
+      <div id="summaryTable"></div>
+    </div>
+
+    <div class="flex" style="gap:12px; flex-wrap:wrap; margin-top:6px;">
+      <button class="btn btn-success btn-block" id="generateReportBtn"><i class="fas fa-file-pdf"></i> Generate Health Report</button>
+      <button class="btn btn-outline" id="resetScreeningBtn"><i class="fas fa-arrow-left"></i> Back</button>
+    </div>
+
+    <!-- REPORT VIEW -->
+    <div id="reportView" class="hidden">
+      <div class="report-preview" id="reportContent">
+        <div class="report-header">
+          <h2><i class="fas fa-heartbeat"></i> DOCTOR IN A BOX</h2>
+          <div style="font-weight:600; letter-spacing:1px;">HEALTH SCREENING REPORT</div>
+          <div class="report-meta" id="reportMeta"></div>
+        </div>
+        <div id="reportCards"></div>
+        <div style="margin-top:20px; border-top:1px dashed #d0e0ed; padding-top:16px; text-align:center; font-size:0.75rem; color:#3a6885;">
+          Screening performed by Doctor in a Box · Informational purposes only
+        </div>
+      </div>
+      <div class="flex" style="gap:8px; flex-wrap:wrap; margin:12px 0;">
+        <button class="btn btn-primary btn-sm" id="pdfDownloadBtn"><i class="fas fa-download"></i> PDF</button>
+        <button class="btn btn-primary btn-sm" id="imageDownloadBtn"><i class="fas fa-image"></i> Image</button>
+        <!-- SHARE VIA WHATSAPP BUTTON -->
+        <button class="btn btn-whatsapp btn-sm" id="whatsappShareBtn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+      </div>
+      <button class="btn btn-outline btn-block" id="backFromReport"><i class="fas fa-arrow-left"></i> Back to Screening</button>
+    </div>
+  </div>
+
+  <!-- DETAIL VIEW MODAL -->
+  <div id="detailModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-file-medical"></i> Patient Details</h2>
+        <button class="modal-close" onclick="closeDetailModal()"><i class="fas fa-times"></i></button>
+      </div>
+      
+      <div id="modalContent">
+        <!-- Patient Info -->
+        <div class="detail-section">
+          <div class="detail-section-title">👤 Patient Information</div>
+          <div class="detail-row">
+            <div class="detail-label">Name</div>
+            <div class="detail-value" id="modalName">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Contact</div>
+            <div class="detail-value" id="modalContact">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Email</div>
+            <div class="detail-value" id="modalEmail">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Location</div>
+            <div class="detail-value" id="modalLocation">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Age</div>
+            <div class="detail-value" id="modalAge">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Gender</div>
+            <div class="detail-value" id="modalGender">—</div>
+          </div>
+        </div>
+
+        <!-- Screening Details -->
+        <div class="detail-section">
+          <div class="detail-section-title">🏥 Screening Details</div>
+          <div class="detail-row">
+            <div class="detail-label">Report ID</div>
+            <div class="detail-value" id="modalReportId">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Date</div>
+            <div class="detail-value" id="modalDate">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Time</div>
+            <div class="detail-value" id="modalTime">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Camp</div>
+            <div class="detail-value" id="modalCamp">—</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Payment</div>
+            <div class="detail-value" id="modalPaymentMethod">—</div>
+          </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="detail-section">
+          <div class="detail-section-title">🧪 Test Results</div>
+          <div id="modalTestResults">
+            <!-- Test items will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="detail-section">
+          <div class="detail-section-title">💰 Summary</div>
+          <div class="detail-row">
+            <div class="detail-label">Total Amount</div>
+            <div class="detail-value" id="modalAmount">₹0/-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="downloadHistoryReportPdf()"><i class="fas fa-download"></i> PDF</button>
+        <button class="btn btn-primary" onclick="downloadHistoryReportImage()"><i class="fas fa-image"></i> Image</button>
+        <button class="btn btn-edit" onclick="editRecord()"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn btn-delete" onclick="deleteRecord()"><i class="fas fa-trash"></i> Delete</button>
+        <button class="btn btn-close" onclick="closeDetailModal()"><i class="fas fa-times"></i> Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="screening-stats.js"></script>
+<script>
+  (function() {
+    // ---------- DATA ----------
+    const checkupsDefault = [
+      { id: 'bp', label: 'Blood Pressure', unit: 'mmHg', fields: ['systolic','diastolic'], price: 0 },
+      { id: 'sugar', label: 'Blood Sugar', unit: 'mg/dL', fields: ['result','testType'], price: 50 },
+      { id: 'oximetry', label: 'Oximetry (SpO₂)', unit: '% / bpm', fields: ['spo2','pulse','spo2Unit','pulseUnit'], price: 50 },
+      { id: 'lipid', label: 'Complete Cholesterol / 5-in-1 Lipid Profile', unit: 'mg/dL', fields: ['tc','hdl','ldl','tg','vldl'], price: 349 },
+      { id: 'bmi', label: 'BMI', unit: 'kg/m²', fields: [], price: 0, packageOnly: true },
+      { id: 'height', label: 'Height', unit: 'cm', fields: ['result'], price: 0, packageOnly: true },
+      { id: 'weight', label: 'Weight', unit: 'kg', fields: ['result'], price: 0, packageOnly: true },
+      { id: 'temp', label: 'Body Temperature', unit: '°F', fields: ['result','unit'], price: 0, packageOnly: true },
+      { id: 'bloodgroup', label: 'Blood Group', unit: '', fields: ['result'], price: 50 }
+    ];
+    let selected = {};
+    let results = {};
+    const DASHBOARD_STORAGE_KEY = 'dibScreeningHistory';
+    let screeningHistory = [];
+    let screeningCounter = 1;
+    let campaignLocation = '';
+    let lastGeneratedReport = null; // store for sharing
+    let editingRecordIndex = -1;
+
+    // DOM refs
+    const dashboardView = document.getElementById('dashboardView');
+    const screeningForm = document.getElementById('screeningForm');
+    const reportView = document.getElementById('reportView');
+    const checkupGrid = document.getElementById('checkupGrid');
+    const dynamicResults = document.getElementById('dynamicResults');
+    const summaryTable = document.getElementById('summaryTable');
+    const reportCards = document.getElementById('reportCards');
+    const reportMeta = document.getElementById('reportMeta');
+
+    function getCheckupEmoji(id) {
+      const emojis = {
+        bp: '❤️',
+        sugar: '🩸',
+        oximetry: '🫁',
+        lipid: '🧪',
+        bmi: '⚖️',
+        height: '📏',
+        weight: '🏋️',
+        temp: '🌡️',
+        bloodgroup: '🧬'
+      };
+      return emojis[id] || '✅';
+    }
+
+    function formatPrice(checkup) {
+      if (checkup.packageOnly) return 'Package';
+      return checkup.price > 0 ? `₹${checkup.price}/-` : 'Free';
+    }
+
+    function getPriceBadgeClass(checkup) {
+      if (checkup.packageOnly) return ' package';
+      return checkup.price === 0 ? ' free' : '';
+    }
+
+    function getSelectedTestsTotal() {
+      return checkupsDefault.reduce((total, c) => total + (selected[c.id] ? c.price : 0), 0);
+    }
+
+    function isCompleteTestSelected() {
+      return checkupsDefault.every(c => selected[c.id]);
+    }
+
+    function getPriceSummaryText() {
+      const total = getSelectedTestsTotal();
+      return isCompleteTestSelected() ? `Complete Test Package: ₹${total}/-` : `Total Amount: ₹${total}/-`;
+    }
+
+    // ----- helpers -----
+    function generateScreeningId() {
+      const pad = String(screeningCounter++).padStart(6, '0');
+      return `DIB-SCR-${pad}`;
+    }
+
+    function loadDashboardHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(DASHBOARD_STORAGE_KEY) || '{}');
+        screeningHistory = Array.isArray(saved.history) ? saved.history : [];
+        screeningCounter = Number(saved.counter) || (screeningHistory.length + 1);
+        campaignLocation = typeof saved.campaignLocation === 'string' ? saved.campaignLocation : '';
+      } catch (err) {
+        screeningHistory = [];
+        screeningCounter = 1;
+        campaignLocation = '';
+      }
+    }
+
+    function saveDashboardHistory() {
+      try {
+        localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify({
+          history: screeningHistory,
+          counter: screeningCounter,
+          campaignLocation
+        }));
+      } catch (err) {
+        console.warn('Dashboard history could not be saved', err);
+      }
+    }
+
+    function getScreeningDate(screening) {
+      return ScreeningStats.getScreeningDate(screening);
+    }
+
+    function getTodayIso() {
+      return ScreeningStats.getLocalDateIso();
+    }
+
+    function syncCampaignToForm() {
+      const campEl = document.getElementById('pCamp');
+      if (campEl) campEl.value = campaignLocation;
+    }
+
+    function setCampaignLocation(value, { save = true, syncForm = true } = {}) {
+      campaignLocation = String(value || '').trim();
+      const input = document.getElementById('campaignLocation');
+      if (input && input.value !== campaignLocation) input.value = campaignLocation;
+      if (syncForm) syncCampaignToForm();
+      if (save) saveDashboardHistory();
+      updateDashboardStats();
+    }
+
+    function updateDashboardDateTime() {
+      const now = new Date();
+      const dashDay = document.getElementById('dashDay');
+      const dashDate = document.getElementById('dashDate');
+      const dashTime = document.getElementById('dashTime');
+      if (dashDay) dashDay.textContent = now.toLocaleDateString(undefined, { weekday: 'long' });
+      if (dashDate) dashDate.textContent = now.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+      if (dashTime) dashTime.textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function updateDashboardStats() {
+      updateDashboardDateTime();
+      const stats = ScreeningStats.computeStats(screeningHistory, {
+        today: getTodayIso()
+      });
+      const campStats = campaignLocation
+        ? ScreeningStats.computeStats(screeningHistory, { today: getTodayIso(), campaign: campaignLocation })
+        : stats;
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      setText('dashTodayCheckups', stats.todayScreenings);
+      setText('dashTotalCheckups', stats.totalScreenings);
+      setText('dashTodayTests', stats.todayCheckups);
+      setText('dashTotalTests', stats.totalCheckups);
+      setText('dashOnlineAmount', ScreeningStats.formatMoney(stats.onlineAmount));
+      setText('dashCashAmount', ScreeningStats.formatMoney(stats.cashAmount));
+      setText('dashTodayOnlineAmount', ScreeningStats.formatMoney(stats.todayOnlineAmount));
+      setText('dashTodayCashAmount', ScreeningStats.formatMoney(stats.todayCashAmount));
+      setText('dashCampName', campaignLocation || 'Not set');
+      setText('dashCampActive', campaignLocation ? `${campStats.todayScreenings} today at camp` : `${stats.todayScreenings} today`);
+    }
+
+    function getPersonDetails() {
+      const now = new Date();
+      const campValue = document.getElementById('pCamp').value.trim() || campaignLocation;
+      return {
+        name: document.getElementById('pName').value || 'Unknown',
+        contact: document.getElementById('pContact').value || '',
+        email: document.getElementById('pEmail').value || '',
+        date: ScreeningStats.getLocalDateIso(now),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        camp: campValue,
+        location: document.getElementById('pLocation').value || '',
+        patientWa: document.getElementById('pPatientWa')?.value?.trim() || '',
+        age: document.getElementById('pAge')?.value?.trim() || '',
+        gender: document.getElementById('pGender')?.value || '',
+        paymentMethod: document.getElementById('pPaymentMethod')?.value || ''
+      };
+    }
+
+    function normalizeWhatsAppNumber(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function formatWhatsAppPhone(value) {
+      const digits = normalizeWhatsAppNumber(value);
+      if (!digits) return '';
+      if (digits.length === 10) return `91${digits}`;
+      return digits;
+    }
+
+    function isMobileDevice() {
+      return /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent || '');
+    }
+
+    function canShareImageFile(file) {
+      return Boolean(
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      );
+    }
+
+    function isLocalShareUrl(url) {
+      try {
+        const host = new URL(url).hostname;
+        return host === 'localhost' || host === '127.0.0.1';
+      } catch (err) {
+        return true;
+      }
+    }
+
+    function showWhatsAppPasteGuide(copied, downloaded) {
+      const guide = document.createElement('div');
+      guide.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;z-index:10001;padding:16px;';
+      guide.innerHTML = `
+        <div style="background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+          <h3 style="margin:0 0 12px;color:#0b2b4a;">Send the report image in WhatsApp</h3>
+          <p style="margin:0 0 16px;color:#4a6a85;line-height:1.5;font-size:0.92rem;">
+            WhatsApp is open with the patient number. Now attach the report image using one of these steps:
+          </p>
+          <ol style="margin:0 0 18px 18px;color:#0b2b4a;line-height:1.7;font-size:0.92rem;">
+            ${copied ? '<li>Click inside the WhatsApp chat box</li><li>Press <strong>Ctrl + V</strong> to paste the copied image</li><li>Press <strong>Send</strong></li>' : ''}
+            ${downloaded ? '<li>Click the <strong>attach clip icon</strong> in WhatsApp</li><li>Select the downloaded PNG report image</li><li>Press <strong>Send</strong></li>' : ''}
+          </ol>
+          <button type="button" id="waGuideDoneBtn" style="width:100%;border:0;background:#25D366;color:#fff;padding:12px 16px;border-radius:999px;font-weight:700;cursor:pointer;">
+            Got it
+          </button>
+        </div>
+      `;
+      document.body.appendChild(guide);
+      guide.querySelector('#waGuideDoneBtn').onclick = () => guide.remove();
+      guide.addEventListener('click', event => {
+        if (event.target === guide) guide.remove();
+      });
+    }
+
+    async function copyImageToClipboard(dataUrl) {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const pngBlob = blob.type === 'image/png'
+        ? blob
+        : new Blob([await blob.arrayBuffer()], { type: 'image/png' });
+
+      if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': pngBlob })
+        ]);
+        return true;
+      }
+
+      throw new Error('Clipboard image copy is not supported in this browser');
+    }
+
+    function downloadImageFile(dataUrl, filename) {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function uploadReportForSharing(dataUrl, reportId) {
+      const response = await fetch('/api/upload-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageData: dataUrl,
+          reportId
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Could not upload report for sharing');
+      }
+      const payload = await response.json();
+      if (!payload.shareUrl) {
+        throw new Error('Share URL was not returned by the server');
+      }
+      return payload;
+    }
+
+    function buildWhatsAppUrl(number, message) {
+      const text = encodeURIComponent(message);
+      const phone = formatWhatsAppPhone(number);
+      if (!phone) {
+        return isMobileDevice()
+          ? `whatsapp://send?text=${text}`
+          : `https://web.whatsapp.com/send?text=${text}`;
+      }
+      if (isMobileDevice()) {
+        return `whatsapp://send?phone=${phone}&text=${text}`;
+      }
+      return `https://web.whatsapp.com/send?phone=${phone}&text=${text}`;
+    }
+
+    function buildWhatsAppContactUrl(number) {
+      const phone = formatWhatsAppPhone(number);
+      if (!phone) {
+        return isMobileDevice() ? 'whatsapp://send' : 'https://web.whatsapp.com/';
+      }
+      if (isMobileDevice()) {
+        return `whatsapp://send?phone=${phone}`;
+      }
+      return `https://web.whatsapp.com/send?phone=${phone}`;
+    }
+
+    async function deliverReportToWhatsApp({ dataUrl, imageFile, filename, message, phone }) {
+      const formattedPhone = formatWhatsAppPhone(phone);
+      const canShareImage = canShareImageFile(imageFile);
+
+      if (canShareImage) {
+        try {
+          await navigator.share({
+            files: [imageFile],
+            title: filename,
+            text: message
+          });
+          return {
+            mode: 'native-share',
+            copied: false,
+            downloaded: false,
+            shareUrl: null
+          };
+        } catch (err) {
+          if (err.name === 'AbortError') throw err;
+        }
+      }
+
+      let copied = false;
+      try {
+        await copyImageToClipboard(dataUrl);
+        copied = true;
+      } catch (err) {
+        console.warn('Clipboard copy failed', err);
+      }
+
+      downloadImageFile(dataUrl, filename);
+
+      let shareUrl = null;
+      try {
+        const uploaded = await uploadReportForSharing(dataUrl, filename);
+        shareUrl = uploaded.shareUrl;
+      } catch (err) {
+        console.warn('Report upload for sharing failed', err);
+      }
+
+      let waMessage = message;
+      if (shareUrl && !isLocalShareUrl(shareUrl)) {
+        waMessage += `\n\nView your report image here:\n${shareUrl}`;
+      }
+
+      if (formattedPhone) {
+        window.open(buildWhatsAppUrl(formattedPhone, waMessage), '_blank');
+      } else {
+        window.open(buildWhatsAppUrl('', waMessage), '_blank');
+      }
+
+      return {
+        mode: copied ? 'clipboard' : 'download',
+        copied,
+        downloaded: true,
+        shareUrl,
+        showPasteGuide: !shareUrl || isLocalShareUrl(shareUrl)
+      };
+    }
+
+    function dataUrlToFile(dataUrl, filename) {
+      const [header, base64] = dataUrl.split(',');
+      const mime = header.match(/data:(.*?);base64/)?.[1] || 'image/png';
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new File([bytes], filename, { type: mime });
+    }
+
+    function getReferenceRange(id) {
+      if (id === 'bp') return '90/60 - 120/80 mmHg';
+      if (id === 'sugar') return '70 - 140 mg/dL';
+      if (id === 'oximetry') return 'SpO₂: 95-100% | Pulse: 60-100 bpm';
+      if (id === 'lipid') return 'TC: <200 | HDL: >40 | LDL: <100 | TG: <150 mg/dL';
+      return 'As per clinical range';
+    }
+
+    function getReportTestDisplay(c) {
+      if (c.id === 'oximetry') {
+        const r = results.oximetry || {};
+        const resultLines = [
+          r.spo2 ? `SpO₂: ${r.spo2}%` : null,
+          r.pulse ? `Pulse: ${r.pulse} bpm` : null
+        ].filter(Boolean);
+        return {
+          id: c.id,
+          label: 'Oximetry (SpO₂)',
+          resultLines: resultLines.length ? resultLines : ['—'],
+          unit: '% / bpm',
+          referenceLines: ['SpO₂: 95-100%', 'Pulse: 60-100 bpm'],
+          price: c.price
+        };
+      }
+      if (c.id === 'lipid') {
+        const r = results.lipid || {};
+        const resultLines = [
+          r.tc ? `TC: ${r.tc}` : null,
+          r.hdl ? `HDL: ${r.hdl}` : null,
+          r.ldl ? `LDL: ${r.ldl}` : null,
+          r.tg ? `TG: ${r.tg}` : null,
+          r.vldl ? `VLDL: ${r.vldl}` : null
+        ].filter(Boolean);
+        return {
+          id: c.id,
+          label: c.label,
+          resultLines: resultLines.length ? resultLines : ['—'],
+          unit: 'mg/dL',
+          referenceLines: ['TC: <200', 'HDL: >40', 'LDL: <100', 'TG: <150', 'VLDL: <30'],
+          price: c.price
+        };
+      }
+      const result = getCheckupResult(c);
+      return {
+        id: c.id,
+        label: getReportTestLabel(c),
+        resultLines: [result.value || '—'],
+        unit: result.unit || '—',
+        referenceLines: [getReferenceRange(c.id)],
+        price: c.price
+      };
+    }
+
+    function normalizeStoredTestRow(test) {
+      if (test.resultLines && test.referenceLines) {
+        return {
+          ...test,
+          label: test.label || test.name || 'Test',
+          resultLines: test.resultLines,
+          referenceLines: test.referenceLines,
+          unit: test.unit || '—'
+        };
+      }
+
+      const id = test.id;
+      if (id === 'oximetry') {
+        const spo2 = String(test.value || '').match(/SpO₂?\s*(\d+)/i);
+        const pulse = String(test.value || '').match(/Pulse\s*(\d+)/i);
+        const resultLines = [];
+        if (spo2) resultLines.push(`SpO₂: ${spo2[1]}%`);
+        if (pulse) resultLines.push(`Pulse: ${pulse[1]} bpm`);
+        return {
+          ...test,
+          label: 'Oximetry (SpO₂)',
+          resultLines: resultLines.length ? resultLines : ['—'],
+          unit: test.unit || '% / bpm',
+          referenceLines: ['SpO₂: 95-100%', 'Pulse: 60-100 bpm']
+        };
+      }
+      if (id === 'lipid') {
+        const resultLines = String(test.value || '')
+          .split(',')
+          .map(part => part.trim())
+          .filter(Boolean)
+          .map(part => {
+            const match = part.match(/^(\w+)\s+([\d.]+)$/);
+            return match ? `${match[1]}: ${match[2]}` : part;
+          });
+        return {
+          ...test,
+          label: 'Complete Cholesterol / 5-in-1 Lipid Profile',
+          resultLines: resultLines.length ? resultLines : ['—'],
+          unit: test.unit || 'mg/dL',
+          referenceLines: ['TC: <200', 'HDL: >40', 'LDL: <100', 'TG: <150', 'VLDL: <30']
+        };
+      }
+
+      return {
+        ...test,
+        label: test.label || test.name || 'Test',
+        resultLines: [test.value ?? '—'],
+        unit: test.unit || '—',
+        referenceLines: [test.reference || 'As per range']
+      };
+    }
+
+    function getCheckupResult(c) {
+      let display = '', unit = c.unit || '';
+      if (c.id === 'bp') {
+        const r = results.bp || {};
+        if (r.systolic && r.diastolic) display = `${r.systolic}/${r.diastolic}`;
+        unit = 'mmHg';
+      } else if (c.id === 'sugar') {
+        display = results.sugar?.result || '';
+        unit = 'mg/dL';
+      } else if (c.id === 'oximetry') {
+        const r = results.oximetry || {};
+        const lines = [
+          r.spo2 ? `SpO₂: ${r.spo2}%` : '',
+          r.pulse ? `Pulse: ${r.pulse} bpm` : ''
+        ].filter(Boolean);
+        display = lines.join(' · ');
+        unit = '% / bpm';
+      } else if (c.id === 'lipid') {
+        const r = results.lipid || {};
+        const parts = [
+          r.tc ? `TC: ${r.tc}` : '',
+          r.hdl ? `HDL: ${r.hdl}` : '',
+          r.ldl ? `LDL: ${r.ldl}` : '',
+          r.tg ? `TG: ${r.tg}` : '',
+          r.vldl ? `VLDL: ${r.vldl}` : ''
+        ].filter(Boolean);
+        display = parts.join(' · ');
+        unit = parts.length ? 'mg/dL' : 'mg/dL';
+      } else if (c.id === 'bmi') {
+        const h = parseFloat(results.height?.result || 0);
+        const w = parseFloat(results.weight?.result || 0);
+        display = h > 0 && w > 0 ? (w / ((h/100)*(h/100))).toFixed(1) : '';
+        unit = 'kg/m²';
+      } else if (c.id === 'bloodgroup') {
+        display = results.bloodgroup?.result || '';
+        unit = '';
+      } else {
+        display = results[c.id]?.result || '';
+        if (c.id === 'temp') unit = results.temp?.unit || '°F';
+      }
+      return { value: display || '—', unit };
+    }
+
+    function getReportTestLabel(c) {
+      return c.id === 'sugar' ? `${c.label} (${results.sugar?.testType || 'Fasting'})` : c.label;
+    }
+
+    function getResultSummary() {
+      let summary = [];
+      checkupsDefault.forEach(c => {
+        if (!selected[c.id]) return;
+        const result = getCheckupResult(c);
+        summary.push({ label: getReportTestLabel(c), value: result.value, unit: result.unit });
+      });
+      return summary;
+    }
+
+    // render checkup checkboxes
+    function renderCheckups() {
+      checkupGrid.innerHTML = '';
+      checkupsDefault.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'checkbox-item' + (selected[c.id] ? ' checked' : '');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = 'cb_' + c.id;
+        cb.value = c.id;
+        cb.checked = selected[c.id] || false;
+        cb.addEventListener('change', (e) => {
+          selected[c.id] = e.target.checked;
+          if (e.target.checked) div.classList.add('checked');
+          else div.classList.remove('checked');
+          renderDynamicResults();
+          renderSummary();
+        });
+        const label = document.createElement('label');
+        label.htmlFor = 'cb_' + c.id;
+        label.textContent = `${getCheckupEmoji(c.id)} ${c.label}`;
+        const price = document.createElement('span');
+        price.className = 'price-badge' + getPriceBadgeClass(c);
+        price.textContent = formatPrice(c);
+        div.appendChild(cb);
+        div.appendChild(label);
+        div.appendChild(price);
+        checkupGrid.appendChild(div);
+      });
+    }
+
+    // dynamic result fields
+    function renderDynamicResults() {
+      let html = '';
+      checkupsDefault.forEach(c => {
+        if (!selected[c.id]) return;
+        const val = results[c.id] || {};
+        html += `<div data-checkup-id="${c.id}" style="background:#f9fcff; border-radius:18px; padding:14px; margin-bottom:14px; border:1px solid #e3eef9;">`;
+        html += `<div style="font-weight:600; color:#0b2b4a; margin-bottom:8px;">${getCheckupEmoji(c.id)} ${c.label}</div>`;
+        if (c.id === 'bp') {
+          html += `<div class="row"><div class="col"><label>Systolic</label><input type="number" class="bp-sys" value="${val.systolic || ''}" placeholder="120"></div>`;
+          html += `<div class="col"><label>Diastolic</label><input type="number" class="bp-dia" value="${val.diastolic || ''}" placeholder="80"></div></div>`;
+          html += `<div class="text-muted" style="font-size:0.75rem;">Unit: mmHg</div>`;
+        } else if (c.id === 'sugar') {
+          html += `<div class="row"><div class="col"><label>Result</label><input type="number" class="sugar-result" value="${val.result || ''}" placeholder="96"></div>`;
+          html += `<div class="col"><label>Test Type</label><select class="sugar-type"><option value="Fasting">Fasting</option><option value="Random">Random</option><option value="Post Meal">Post Meal</option><option value="Other">Other</option></select></div></div>`;
+          html += `<div class="text-muted" style="font-size:0.75rem;">Unit: mg/dL</div>`;
+        } else if (c.id === 'oximetry') {
+          html += `<div class="row"><div class="col"><label>Oxygen Saturation (SpO₂)</label><input type="number" class="oximetry-spo2" value="${val.spo2 || ''}" placeholder="98"></div>`;
+          html += `<div class="col"><label>Pulse Rate</label><input type="number" class="oximetry-pulse" value="${val.pulse || ''}" placeholder="72"></div></div>`;
+          html += `<div class="row"><div class="col"><label>SpO₂ Unit</label><select class="oximetry-spo2-unit"><option value="%">%</option></select></div>`;
+          html += `<div class="col"><label>Pulse Unit</label><select class="oximetry-pulse-unit"><option value="bpm">bpm</option></select></div></div>`;
+        } else if (c.id === 'lipid') {
+          html += `<div class="row"><div class="col"><label>Total Cholesterol (TC)</label><input type="number" class="lipid-tc" value="${val.tc || ''}" placeholder="mg/dL"></div>`;
+          html += `<div class="col"><label>HDL Cholesterol</label><input type="number" class="lipid-hdl" value="${val.hdl || ''}" placeholder="mg/dL"></div></div>`;
+          html += `<div class="row"><div class="col"><label>LDL Cholesterol</label><input type="number" class="lipid-ldl" value="${val.ldl || ''}" placeholder="mg/dL"></div>`;
+          html += `<div class="col"><label>Triglycerides (TG)</label><input type="number" class="lipid-tg" value="${val.tg || ''}" placeholder="mg/dL"></div></div>`;
+          html += `<div><label>VLDL Cholesterol</label><input type="number" class="lipid-vldl" value="${val.vldl || ''}" placeholder="mg/dL"></div>`;
+          html += `<div class="text-muted" style="font-size:0.75rem;">Unit: mg/dL</div>`;
+        } else if (c.id === 'bmi') {
+          const h = parseFloat(results.height?.result || 0);
+          const w = parseFloat(results.weight?.result || 0);
+          let bmi = '';
+          if (h > 0 && w > 0) bmi = (w / ((h/100)*(h/100))).toFixed(1);
+          html += `<div style="background:#e2edfb; border-radius:16px; padding:12px; font-weight:600;">BMI: ${bmi || '—'} kg/m²</div>`;
+          html += `<div class="text-muted" style="font-size:0.7rem;">Auto-calculated from height & weight</div>`;
+        } else if (c.id === 'height') {
+          html += `<div><label>Result (cm)</label><input type="number" class="height-result" value="${val.result || ''}" placeholder="170"></div>`;
+        } else if (c.id === 'weight') {
+          html += `<div><label>Result (kg)</label><input type="number" class="weight-result" value="${val.result || ''}" placeholder="68"></div>`;
+        } else if (c.id === 'temp') {
+          html += `<div class="row"><div class="col"><label>Result</label><input type="number" class="temp-result" value="${val.result || ''}" placeholder="98.4"></div>`;
+          html += `<div class="col"><label>Unit</label><select class="temp-unit"><option value="°F">°F</option><option value="°C">°C</option></select></div></div>`;
+        } else if (c.id === 'bloodgroup') {
+          html += `<div><label>Blood Group</label><select class="bg-select"><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select></div>`;
+        }
+        html += `</div>`;
+      });
+      dynamicResults.innerHTML = html;
+
+      // attach listeners to store values
+      document.querySelectorAll('.bp-sys, .bp-dia, .sugar-result, .oximetry-spo2, .oximetry-pulse, .lipid-tc, .lipid-hdl, .lipid-ldl, .lipid-tg, .lipid-vldl, .height-result, .weight-result, .temp-result').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const parent = e.target.closest('[data-checkup-id]');
+          const id = parent?.getAttribute('data-checkup-id');
+          if (!id) return;
+          if (!results[id]) results[id] = {};
+          if (e.target.classList.contains('bp-sys')) results[id].systolic = e.target.value;
+          else if (e.target.classList.contains('bp-dia')) results[id].diastolic = e.target.value;
+          else if (e.target.classList.contains('sugar-result')) results[id].result = e.target.value;
+          else if (e.target.classList.contains('oximetry-spo2')) results[id].spo2 = e.target.value;
+          else if (e.target.classList.contains('oximetry-pulse')) results[id].pulse = e.target.value;
+          else if (e.target.classList.contains('lipid-tc')) results[id].tc = e.target.value;
+          else if (e.target.classList.contains('lipid-hdl')) results[id].hdl = e.target.value;
+          else if (e.target.classList.contains('lipid-ldl')) results[id].ldl = e.target.value;
+          else if (e.target.classList.contains('lipid-tg')) results[id].tg = e.target.value;
+          else if (e.target.classList.contains('lipid-vldl')) results[id].vldl = e.target.value;
+          else if (e.target.classList.contains('height-result')) results[id].result = e.target.value;
+          else if (e.target.classList.contains('weight-result')) results[id].result = e.target.value;
+          else if (e.target.classList.contains('temp-result')) results[id].result = e.target.value;
+          renderSummary();
+        });
+      });
+      document.querySelectorAll('.sugar-type, .oximetry-spo2-unit, .oximetry-pulse-unit, .temp-unit, .bg-select').forEach(el => {
+        el.addEventListener('change', (e) => {
+          const parent = e.target.closest('[data-checkup-id]');
+          const id = parent?.getAttribute('data-checkup-id');
+          if (!id) return;
+          if (!results[id]) results[id] = {};
+          if (e.target.classList.contains('sugar-type')) results[id].testType = e.target.value;
+          else if (e.target.classList.contains('oximetry-spo2-unit')) results[id].spo2Unit = e.target.value;
+          else if (e.target.classList.contains('oximetry-pulse-unit')) results[id].pulseUnit = e.target.value;
+          else if (e.target.classList.contains('temp-unit')) results[id].unit = e.target.value;
+          else if (e.target.classList.contains('bg-select')) results[id].result = e.target.value;
+          renderSummary();
+        });
+      });
+      document.querySelectorAll('.sugar-type').forEach(el => {
+        if (results.sugar?.testType) el.value = results.sugar.testType;
+      });
+      document.querySelectorAll('.bg-select').forEach(el => {
+        if (results.bloodgroup?.result) el.value = results.bloodgroup.result;
+      });
+    }
+
+    // summary table
+    function renderSummary() {
+      let rows = '';
+      checkupsDefault.forEach(c => {
+        if (!selected[c.id]) return;
+        const result = getCheckupResult(c);
+        rows += `<div class="result-card"><span class="label">${getCheckupEmoji(c.id)} ${c.label} <span class="price-badge${getPriceBadgeClass(c)}">${formatPrice(c)}</span></span><span><span class="value">${result.value}</span> <span class="unit">${result.unit}</span></span></div>`;
+      });
+      if (rows) {
+        rows += `<div class="summary-total"><span>${isCompleteTestSelected() ? 'Complete Test Package' : 'Total Amount'}</span><span>₹${getSelectedTestsTotal()}/-</span></div>`;
+      }
+      summaryTable.innerHTML = rows || '<div class="text-muted" style="padding:8px;">No results yet</div>';
+    }
+
+    // generate report
+    function generateReport() {
+      const person = getPersonDetails();
+      if (person.camp) setCampaignLocation(person.camp, { save: true, syncForm: true });
+      const existing = editingRecordIndex >= 0 ? screeningHistory[editingRecordIndex] : null;
+      const id = existing?.id || generateScreeningId();
+      let cards = '';
+      let tableRows = '';
+      const detailRowsLeft = [
+        ['👤 Name', person.name || '—'],
+        ['📞 Phone', person.contact || '—'],
+        ['✉️ Email', person.email || '—'],
+        ['📍 Location', person.location || '—'],
+        ['⚧ Gender', person.gender || '—']
+      ];
+      const detailRowsRight = [
+        ['🏕️ Camp Location', person.camp || '—'],
+        ['📅 Date', person.date || '—'],
+        ['🕒 Time', person.time || '—'],
+        ['🧾 Report ID', id],
+        ['💳 Payment Method', person.paymentMethod || '—'],
+        ['💰 Price', getPriceSummaryText()]
+      ];
+
+      const selectedSummary = [];
+      checkupsDefault.forEach(c => {
+        if (!selected[c.id]) return;
+        const display = getReportTestDisplay(c);
+        const resultText = display.resultLines.join(' · ');
+        const referenceText = display.referenceLines.join(' · ');
+        selectedSummary.push({
+          id: display.id,
+          label: display.label,
+          value: resultText,
+          resultLines: display.resultLines,
+          unit: display.unit,
+          reference: referenceText,
+          referenceLines: display.referenceLines,
+          price: display.price
+        });
+        cards += `<div class="result-card" style="border-left-color:#1f6e9c;"><span class="label">${getCheckupEmoji(c.id)} ${display.label}</span><span><span class="value">${display.resultLines.join('<br>')}</span> <span class="unit">${display.unit}</span></span></div>`;
+        tableRows += `<tr><td>${getCheckupEmoji(c.id)} ${display.label}</td><td>${display.resultLines.join('<br>')}</td><td>${display.unit || '—'}</td><td>${display.referenceLines.join('<br>')}</td><td>${formatPrice(c)}</td></tr>`;
+      });
+
+      // store for sharing
+      lastGeneratedReport = {
+        person,
+        id,
+        summary: getResultSummary(),
+        tests: selectedSummary,
+        amount: getSelectedTestsTotal()
+      };
+
+      const recordPayload = {
+        id,
+        person,
+        checkups: {...selected},
+        results: JSON.parse(JSON.stringify(results)),
+        tests: selectedSummary,
+        amount: ScreeningStats.getRecordAmount({ tests: selectedSummary, checkups: selected, amount: getSelectedTestsTotal() }),
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      if (existing) {
+        screeningHistory[editingRecordIndex] = recordPayload;
+        editingRecordIndex = -1;
+      } else {
+        screeningHistory.push(recordPayload);
+      }
+      saveDashboardHistory();
+      updateDashboardStats();
+
+      const reportContent = document.getElementById('reportContent');
+      reportContent.innerHTML = '<div class="text-center text-muted" style="padding:20px;">Preparing report page...</div>';
+      renderCompanyTemplateReport(lastGeneratedReport).then(dataUrl => {
+        reportContent.innerHTML = `<img src="${dataUrl}" alt="Health screening report" style="display:block;width:100%;max-width:1024px;margin:0 auto;height:auto;border-radius:12px;">`;
+      }).catch(err => {
+        console.error('Report preview error:', err);
+        reportContent.innerHTML = '<div class="text-muted" style="padding:16px;">Report generated. Use Image or PDF to download.</div>';
+      });
+      document.getElementById('reportView').classList.remove('hidden');
+      document.getElementById('screeningForm').querySelector('.card:last-child')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ----- WHATSAPP SHARE (IMAGE FORMAT) -----
+    function shareViaWhatsApp() {
+      if (!lastGeneratedReport) {
+        alert('Please generate a report first.');
+        return;
+      }
+      const { person, id } = lastGeneratedReport;
+
+      // Show loading indicator
+      const statusMsg = document.createElement('div');
+      statusMsg.style.cssText = 'position:fixed;top:20px;left:20px;background:#2a7de1;color:white;padding:12px 16px;border-radius:8px;z-index:9999;font-weight:600;';
+      statusMsg.textContent = '⏳ Generating report image...';
+      document.body.appendChild(statusMsg);
+
+      convertReportToImage().then(dataUrl => {
+        const filename = `health-screening-${id}.png`;
+        const imageFile = dataUrlToFile(dataUrl, filename);
+        const message = `Doctor in a Box Health Screening Report\n\nPatient: ${person.name}\nReport ID: ${id}\nDate: ${person.date} ${person.time}`;
+        const canShareImage = canShareImageFile(imageFile);
+        const formattedPhone = formatWhatsAppPhone(person.patientWa || person.contact);
+        const shareHint = formattedPhone
+          ? (canShareImage
+            ? 'Click Share to send the report image through WhatsApp. If your browser asks, choose WhatsApp and send.'
+            : 'WhatsApp will open with the patient number. The report image will be copied and downloaded so you can paste or attach it.')
+          : (canShareImage
+            ? 'Choose WhatsApp from the share menu to send the report image.'
+            : 'The report image will be downloaded so you can attach it in WhatsApp.');
+
+        // Create preview modal with image
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;overflow:auto;';
+        
+        const content = document.createElement('div');
+        content.style.cssText = 'background:white;border-radius:16px;padding:24px;max-width:600px;width:95%;box-shadow:0 10px 40px rgba(0,0,0,0.3);margin:auto;';
+        
+        // Title
+        const title = document.createElement('h3');
+        title.textContent = '📲 Share Report via WhatsApp';
+        title.style.cssText = 'margin:0 0 16px 0;color:#0b2b4a;';
+        content.appendChild(title);
+
+        const hint = document.createElement('p');
+        hint.textContent = shareHint;
+        hint.style.cssText = 'margin:0 0 16px 0;color:#4a6a85;font-size:0.92rem;line-height:1.5;';
+        content.appendChild(hint);
+
+        if (formattedPhone) {
+          const phoneNote = document.createElement('p');
+          phoneNote.innerHTML = `<strong>Sending to:</strong> +${formattedPhone}`;
+          phoneNote.style.cssText = 'margin:0 0 16px 0;color:#0b2b4a;font-size:0.92rem;';
+          content.appendChild(phoneNote);
+        }
+
+        // Preview image
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'width:100%;border-radius:12px;margin-bottom:16px;border:2px solid #e0e0e0;';
+        content.appendChild(img);
+
+        const btnContainer = document.createElement('div');
+        btnContainer.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;justify-content:center;';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-outline btn-sm';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Image';
+        copyBtn.onclick = async () => {
+          try {
+            await copyImageToClipboard(dataUrl);
+            statusMsg.textContent = '✅ Report image copied. Paste it in WhatsApp with Ctrl+V.';
+            setTimeout(() => statusMsg.remove(), 3000);
+          } catch (err) {
+            statusMsg.textContent = '❌ Copy failed. Use Download Image instead.';
+            setTimeout(() => statusMsg.remove(), 3000);
+          }
+        };
+        btnContainer.appendChild(copyBtn);
+
+        // Download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Image';
+        downloadBtn.onclick = () => {
+          downloadImageFile(dataUrl, filename);
+          statusMsg.textContent = '✅ Image downloaded!';
+          setTimeout(() => statusMsg.remove(), 2000);
+        };
+        btnContainer.appendChild(downloadBtn);
+
+        // WhatsApp button
+        const whatsappBtn = document.createElement('button');
+        whatsappBtn.className = 'btn btn-whatsapp btn-sm';
+        whatsappBtn.innerHTML = formattedPhone
+          ? '<i class="fab fa-whatsapp"></i> Send Report to Number'
+          : (canShareImage
+            ? '<i class="fab fa-whatsapp"></i> Share Image'
+            : '<i class="fab fa-whatsapp"></i> Open WhatsApp');
+        whatsappBtn.onclick = async () => {
+          modal.remove();
+          try {
+            statusMsg.textContent = formattedPhone
+              ? '⏳ Preparing report for WhatsApp...'
+              : '⏳ Opening WhatsApp share...';
+
+            const result = await deliverReportToWhatsApp({
+              dataUrl,
+              imageFile,
+              filename,
+              message,
+              phone: formattedPhone
+            });
+
+            if (result.mode === 'native-share') {
+              statusMsg.textContent = '✅ Report shared successfully!';
+            } else if (result.shareUrl && !isLocalShareUrl(result.shareUrl)) {
+              statusMsg.innerHTML = '✅ WhatsApp opened with a report image link for the patient.';
+            } else if (result.showPasteGuide) {
+              statusMsg.innerHTML = result.copied
+                ? '✅ WhatsApp opened. Report image copied — paste it in chat with Ctrl+V.'
+                : '✅ WhatsApp opened. Attach the downloaded report image in chat.';
+              showWhatsAppPasteGuide(result.copied, result.downloaded);
+            } else {
+              statusMsg.textContent = '✅ WhatsApp opened.';
+            }
+            setTimeout(() => statusMsg.remove(), 7000);
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              statusMsg.remove();
+              return;
+            }
+            console.error('WhatsApp share error:', err);
+            statusMsg.textContent = '❌ Error sharing image';
+            setTimeout(() => statusMsg.remove(), 3000);
+          }
+        };
+        btnContainer.appendChild(whatsappBtn);
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-outline btn-sm';
+        closeBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        closeBtn.onclick = () => {
+          modal.remove();
+          statusMsg.remove();
+        };
+        btnContainer.appendChild(closeBtn);
+
+        content.appendChild(btnContainer);
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        statusMsg.textContent = formattedPhone
+          ? '✅ Report ready. Click "Send Report to Number" to continue.'
+          : (canShareImage
+            ? '✅ Image ready to share!'
+            : '✅ Image ready. WhatsApp will open after download.');
+      }).catch(err => {
+        console.error('Image error:', err);
+        statusMsg.textContent = '❌ Error: ' + err.message;
+        setTimeout(() => statusMsg.remove(), 3000);
+      });
+    }
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Could not load image: ${src}`));
+        img.src = src;
+      });
+    }
+
+    function buildCurrentReportExportData() {
+      if (lastGeneratedReport?.tests) {
+        return {
+          person: lastGeneratedReport.person || {},
+          id: lastGeneratedReport.id || 'DIB-SCR-000000',
+          tests: lastGeneratedReport.tests || [],
+          amount: lastGeneratedReport.amount || getSelectedTestsTotal()
+        };
+      }
+
+      const person = getPersonDetails();
+      const testsForExport = [];
+      checkupsDefault.forEach(c => {
+        if (!selected[c.id]) return;
+        const display = getReportTestDisplay(c);
+        testsForExport.push({
+          id: display.id,
+          label: display.label,
+          value: display.resultLines.join(' · '),
+          resultLines: display.resultLines,
+          unit: display.unit,
+          price: display.price,
+          reference: display.referenceLines.join(' · '),
+          referenceLines: display.referenceLines
+        });
+      });
+
+      return {
+        person,
+        id: lastGeneratedReport?.id || 'DIB-SCR-000000',
+        tests: testsForExport,
+        amount: getSelectedTestsTotal()
+      };
+    }
+
+    function normalizeReportExportData(targetElement) {
+      const screening = targetElement?._exportScreening;
+      if (screening) {
+        return {
+          person: screening.person || {},
+          id: screening.id || 'DIB-SCR-000000',
+          tests: Array.isArray(screening.tests) ? screening.tests : [],
+          amount: ScreeningStats.getRecordAmount(screening)
+        };
+      }
+      return buildCurrentReportExportData();
+    }
+
+    function renderCompanyTemplateReport(reportData) {
+      return loadImage('TEMPLETE .png').then(templateImg => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas is not supported in this browser');
+
+        const baseWidth = templateImg.naturalWidth || templateImg.width;
+        const baseHeight = templateImg.naturalHeight || templateImg.height;
+        const exportScale = 3;
+        canvas.width = baseWidth * exportScale;
+        canvas.height = baseHeight * exportScale;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+
+        const sx = canvas.width / 1024;
+        const sy = canvas.height / 1536;
+        const textColor = '#0b2b4a';
+        const teal = '#00756f';
+        const lineColor = '#c8dde5';
+        const font = (size, weight = 700) => `${weight} ${Math.round(size * sy)}px Arial, Helvetica, sans-serif`;
+
+        const fitText = (text, x, y, maxWidth, fontValue, color = textColor, align = 'left') => {
+          const value = text === undefined || text === null ? '—' : String(text);
+          ctx.fillStyle = color;
+          ctx.textBaseline = 'middle';
+          ctx.textAlign = align;
+          ctx.font = fontValue;
+          let clipped = value;
+          while (clipped.length > 1 && ctx.measureText(clipped).width > maxWidth) {
+            clipped = clipped.slice(0, -1);
+          }
+          if (clipped !== value) {
+            while (clipped.length > 1 && ctx.measureText(`${clipped}...`).width > maxWidth) {
+              clipped = clipped.slice(0, -1);
+            }
+            clipped = `${clipped}...`;
+          }
+          ctx.fillText(clipped, Math.round(x), Math.round(y));
+        };
+
+        const at = (x, y, maxWidth, text, fontValue = font(18), color = textColor, align = 'left') => {
+          fitText(text, x * sx, y * sy, maxWidth * sx, fontValue, color, align);
+        };
+
+        const drawCellLines = (x, centerY, maxWidth, lines, fontValue, color) => {
+          const items = (Array.isArray(lines) ? lines : [lines]).filter(line => line !== undefined && line !== null && line !== '');
+          const content = items.length ? items : ['—'];
+          const lineHeight = 17;
+          const totalHeight = content.length * lineHeight;
+          let currentY = centerY - totalHeight / 2 + lineHeight / 2;
+          content.forEach(line => {
+            at(x, currentY, maxWidth, line, fontValue, color);
+            currentY += lineHeight;
+          });
+          return content.length;
+        };
+
+        const roundRect = (x, y, w, h, r, fill, stroke = lineColor) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + w - r, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+          ctx.lineTo(x + w, y + h - r);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+          ctx.lineTo(x + r, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+          ctx.fillStyle = fill;
+          ctx.fill();
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.5 * sx;
+          ctx.stroke();
+        };
+
+        const money = (value) => {
+          if (value === undefined || value === null || value === '') return 'Rs. 0/-';
+          if (typeof value === 'number') return `Rs. ${value}/-`;
+          const raw = String(value).replace('₹', 'Rs. ');
+          return raw.includes('/-') ? raw : `${raw}/-`;
+        };
+
+        const sectionTitle = (title, x, y, w) => {
+          roundRect(x * sx, y * sy, w * sx, 40 * sy, 8 * sx, '#e9f6f5', '#b8dcd8');
+          at(x + 16, y + 21, w - 32, title, font(18, 800), teal);
+        };
+
+        const person = reportData.person || {};
+        const genderAge = [person.gender, person.age ? `${person.age} yrs` : ''].filter(Boolean).join(' / ') || '—';
+        const reportLabel = reportData.reportName || reportData.reports || `${(reportData.tests || []).length} Test(s)`;
+
+        const formatDate = (dateText) => {
+          if (!dateText) return '—';
+          const date = new Date(dateText);
+          if (Number.isNaN(date.getTime())) return dateText;
+          return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, ' ');
+        };
+
+        at(512, 215, 760, 'HEALTH SCREENING REPORT', font(30, 800), teal, 'center');
+
+        const cardY = 260;
+        const cardH = 190;
+        roundRect(48 * sx, cardY * sy, 448 * sx, cardH * sy, 10 * sx, 'rgba(255,255,255,0.9)', '#d6e8ef');
+        roundRect(528 * sx, cardY * sy, 448 * sx, cardH * sy, 10 * sx, 'rgba(255,255,255,0.9)', '#d6e8ef');
+        at(72, cardY + 30, 360, 'Patient Details', font(18, 800), teal);
+        at(552, cardY + 30, 360, 'Report Details', font(18, 800), teal);
+
+        const drawInfoLine = (x, y, label, value, labelWidth = 110, valueWidth = 280) => {
+          at(x, y, labelWidth, label, font(15, 800), textColor);
+          at(x + labelWidth + 8, y, 12, ':', font(15, 800), textColor);
+          at(x + labelWidth + 28, y, valueWidth, value || '—', font(15, 500), textColor);
+        };
+
+        drawInfoLine(72, cardY + 68, 'Name', person.name || 'Unknown', 90, 300);
+        drawInfoLine(72, cardY + 102, 'Gender/Age', genderAge, 90, 300);
+        drawInfoLine(72, cardY + 136, 'Mobile', person.contact || '—', 90, 300);
+        drawInfoLine(72, cardY + 170, 'Email', person.email || '—', 90, 300);
+
+        drawInfoLine(552, cardY + 68, 'Patient ID', reportData.id || 'DIB-SCR-000000', 112, 270);
+        drawInfoLine(552, cardY + 102, 'Date', formatDate(person.date), 112, 270);
+        drawInfoLine(552, cardY + 136, 'Time', person.time || '—', 112, 270);
+        drawInfoLine(552, cardY + 170, 'Payment', person.paymentMethod || '—', 112, 270);
+
+        const addressText = person.location || person.address || person.camp || '';
+        if (addressText) {
+          at(72, 482, 820, `Address: ${addressText}`, font(15, 600), textColor);
+        }
+
+        roundRect(48 * sx, 520 * sy, 928 * sx, 52 * sy, 10 * sx, '#0b6f68', '#0b6f68');
+        at(512, 547, 760, 'TEST RESULTS', font(24, 800), '#ffffff', 'center');
+
+        const tableX = 48;
+        const tableY = 610;
+        const tableW = 928;
+        const headerH = 34;
+        const baseRowH = 36;
+        const lineHeight = 17;
+        const tests = Array.isArray(reportData.tests) ? reportData.tests.map(normalizeStoredTestRow) : [];
+        const visibleTests = tests.slice(0, 10);
+        const tableRows = visibleTests.length ? visibleTests : [{ label: 'No checkups selected', resultLines: ['—'], unit: '—', referenceLines: ['—'], price: 0 }];
+        const rowHeights = tableRows.map(test => {
+          const lineCount = Math.max(
+            1,
+            (test.resultLines || []).length,
+            (test.referenceLines || []).length,
+            String(test.label || '').length > 24 ? 2 : 1
+          );
+          return Math.max(baseRowH, lineCount * lineHeight + 14);
+        });
+        const tableBodyH = rowHeights.reduce((sum, height) => sum + height, 0);
+        const tableH = headerH + tableBodyH + 58;
+        roundRect(tableX * sx, tableY * sy, tableW * sx, tableH * sy, 10 * sx, 'rgba(255,255,255,0.93)', '#d6e8ef');
+        ctx.fillStyle = '#eaf6f5';
+        ctx.fillRect(tableX * sx, tableY * sy, tableW * sx, headerH * sy);
+
+        const col = [tableX + 14, tableX + 220, tableX + 490, tableX + 590, tableX + 860];
+        const colW = [200, 260, 88, 258, 66];
+        const tableFont = font(13, 500);
+        const tableHeaderFont = font(14, 800);
+
+        ['Test Name', 'Result', 'Unit', 'Reference Range', 'Price'].forEach((label, index) => {
+          at(col[index], tableY + 18, colW[index], label, tableHeaderFont, teal);
+        });
+
+        let computedTotal = 0;
+        let currentY = tableY + headerH;
+        tableRows.forEach((test, index) => {
+          const rowH = rowHeights[index];
+          const centerY = currentY + rowH / 2;
+          const price = test.price ?? 0;
+          if (typeof price === 'number') computedTotal += price;
+          if (index % 2 === 0) {
+            ctx.fillStyle = 'rgba(247, 251, 252, 0.9)';
+            ctx.fillRect(tableX * sx, currentY * sy, tableW * sx, rowH * sy);
+          }
+          drawCellLines(col[0], centerY, colW[0], [test.label || test.name || 'Test'], tableFont, textColor);
+          drawCellLines(col[1], centerY, colW[1], test.resultLines || [test.value ?? '—'], tableFont, textColor);
+          drawCellLines(col[2], centerY, colW[2], [test.unit || '—'], tableFont, textColor);
+          drawCellLines(col[3], centerY, colW[3], test.referenceLines || [test.reference || 'As per range'], tableFont, textColor);
+          at(col[4], centerY, colW[4], money(price).replace('Rs. ', ''), tableFont, textColor);
+          currentY += rowH;
+        });
+
+        const totalY = tableY + headerH + tableBodyH + 32;
+        at(tableX + 18, totalY, 220, 'Total Amount', font(17, 800), textColor);
+        at(tableX + 844, totalY, 66, money(reportData.amount ?? computedTotal).replace('Rs. ', ''), font(17, 800), textColor);
+
+        return canvas.toDataURL('image/png');
+      });
+    }
+
+    function convertReportToImage(targetElement) {
+      return new Promise((resolve, reject) => {
+        const element = targetElement || document.getElementById('reportContent');
+        if (!element || !element.innerHTML || !element.innerHTML.trim()) {
+          reject(new Error('Generate a report before exporting'));
+          return;
+        }
+
+        renderCompanyTemplateReport(normalizeReportExportData(element)).then(resolve).catch(() => {
+          reject(new Error('Image export failed while rendering company report template'));
+        });
+        return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas is not supported in this browser'));
+          return;
+        }
+
+        canvas.width = 1080;
+        canvas.height = 1500;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const pagePadding = 52;
+        const innerWidth = canvas.width - pagePadding * 2;
+
+        const drawRoundedRect = (x, y, width, height, radius, fillColor, strokeColor) => {
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + width - radius, y);
+          ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+          ctx.lineTo(x + width, y + height - radius);
+          ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+          ctx.lineTo(x + radius, y + height);
+          ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+          if (fillColor) {
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+          }
+          if (strokeColor) {
+            ctx.strokeStyle = strokeColor;
+            ctx.stroke();
+          }
+        };
+
+        const drawText = (text, x, y, font, color, align = 'left', weight = 'normal') => {
+          ctx.textBaseline = 'middle';
+          ctx.textAlign = align;
+          ctx.fillStyle = color;
+          ctx.font = `${weight} ${font}`;
+          const lines = Array.isArray(text) ? text : [String(text)];
+          lines.forEach((line, index) => {
+            const offsetY = index * (font.includes('Bold') || font.includes('700') ? 28 : 22);
+            ctx.fillText(line, x, y + offsetY);
+          });
+        };
+
+        const loadImages = [
+          loadImage('visys-cloud .png').catch(() => null),
+          loadImage('doctor in a box .jpeg').catch(() => null)
+        ];
+
+        Promise.all(loadImages).then(([visysImg, boxImg]) => {
+          const brandX = pagePadding;
+          const brandY = 28;
+          const logoWidth = 220;
+          const logoHeight = 70;
+
+          if (visysImg) {
+            ctx.drawImage(visysImg, brandX, brandY, logoWidth, logoHeight);
+          }
+          if (boxImg) {
+            ctx.drawImage(boxImg, canvas.width - pagePadding - logoWidth, brandY, logoWidth, logoHeight);
+          }
+
+          ctx.fillStyle = '#0b2b4a';
+          ctx.font = '700 34px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Doctor in a Box', canvas.width / 2, 135);
+
+          ctx.fillStyle = '#2a7de1';
+          ctx.font = '700 26px Arial';
+          ctx.fillText('HEALTH SCREENING REPORT', canvas.width / 2, 182);
+
+          const blockX = pagePadding;
+          const blockY = 220;
+          const blockWidth = innerWidth;
+          const blockHeight = 300;
+          drawRoundedRect(blockX, blockY, blockWidth, blockHeight, 16, '#ffffff', '#dfeaf6');
+
+          const leftData = [
+            ['👤 Name', document.getElementById('pName')?.value || '—'],
+            ['📞 Phone', document.getElementById('pContact')?.value || '—'],
+            ['✉️ Email', document.getElementById('pEmail')?.value || '—'],
+            ['📍 Location', document.getElementById('pLocation')?.value || '—'],
+            ['🎂 Age', document.getElementById('pAge')?.value ? `${document.getElementById('pAge').value} years` : '—']
+          ];
+
+          const rightData = [
+            ['🏕️ Camp Location', document.getElementById('pCamp')?.value || '—'],
+            ['📅 Date', new Date().toISOString().slice(0, 10)],
+            ['🕒 Time', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })],
+            ['🧾 Report ID', lastGeneratedReport?.id || 'DIB-SCR-000000'],
+            ['💰 Price', `₹${getSelectedTestsTotal() || 0}/-`]
+          ];
+
+          const listStartX = blockX + 22;
+          const listStartY = blockY + 54;
+          const labelWidth = 170;
+          const rowHeight = 40;
+
+          leftData.forEach(([label, value], index) => {
+            const y = listStartY + index * rowHeight;
+            ctx.fillStyle = '#164c98';
+            ctx.font = '700 18px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, listStartX, y + 10);
+            ctx.fillStyle = '#102844';
+            ctx.font = '600 18px Arial';
+            ctx.fillText(String(value), listStartX + labelWidth + 20, y + 10);
+          });
+
+          rightData.forEach(([label, value], index) => {
+            const y = listStartY + index * rowHeight;
+            ctx.fillStyle = '#164c98';
+            ctx.font = '700 18px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, blockX + innerWidth / 2 + 20, y + 10);
+            ctx.fillStyle = '#102844';
+            ctx.font = '600 18px Arial';
+            ctx.fillText(String(value), blockX + innerWidth / 2 + 20 + labelWidth + 10, y + 10);
+          });
+
+          const testY = blockY + blockHeight + 28;
+          ctx.fillStyle = '#113f96';
+          ctx.font = '800 28px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('TEST RESULTS', canvas.width / 2, testY);
+
+          const summaryY = testY + 38;
+          const resultCards = [
+            ['❤️ Blood Pressure', document.querySelector('.bp-sys')?.value || '—', 'mmHg'],
+            ['🩸 Blood Sugar', document.querySelector('.sugar-result')?.value || '—', 'mg/dL']
+          ];
+
+          resultCards.forEach(([label, value, unit], index) => {
+            const cardX = pagePadding + (index * (innerWidth / 2 + 10));
+            const cardWidth = innerWidth / 2 - 18;
+            drawRoundedRect(cardX, summaryY, cardWidth, 100, 14, '#f8fbff', '#d4e6f9');
+            ctx.fillStyle = '#113f96';
+            ctx.font = '700 18px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, cardX + 18, summaryY + 30);
+            ctx.fillStyle = '#101d31';
+            ctx.font = '800 28px Arial';
+            ctx.fillText(String(value), cardX + 18, summaryY + 72);
+            ctx.fillStyle = '#4a6382';
+            ctx.font = '600 16px Arial';
+            ctx.fillText(unit, cardX + 170, summaryY + 72);
+          });
+
+          const tableY = summaryY + 128;
+          drawRoundedRect(pagePadding, tableY, innerWidth, 220, 14, '#ffffff', '#d5e6f8');
+          ctx.fillStyle = '#0f4dab';
+          ctx.font = '800 20px Arial';
+          ctx.fillText('🧪 Test Details', pagePadding + 22, tableY + 28);
+
+          ctx.fillStyle = '#0b2b4a';
+          ctx.font = '700 16px Arial';
+          const tableCols = [220, 160, 120, 200, 120];
+          let colX = pagePadding + 18;
+          ['Test Name', 'Result', 'Unit', 'Reference Range', 'Price'].forEach((header, idx) => {
+            ctx.fillText(header, colX, tableY + 54);
+            colX += tableCols[idx];
+          });
+
+          const writes = [
+            ['Blood Pressure', document.querySelector('.bp-sys')?.value ? `${document.querySelector('.bp-sys').value}/${document.querySelector('.bp-dia')?.value || '—'}` : '—', 'mmHg', '90/60 - 120/80', 'Free'],
+            ['Blood Sugar', document.querySelector('.sugar-result')?.value || '—', 'mg/dL', '70 - 140', '₹50/-']
+          ];
+
+          writes.forEach((row, idx) => {
+            const startY = tableY + 90 + idx * 34;
+            let x = pagePadding + 18;
+            row.forEach((cell, colIdx) => {
+              ctx.fillStyle = '#102844';
+              ctx.font = '600 15px Arial';
+              ctx.fillText(String(cell), x, startY);
+              x += tableCols[colIdx];
+            });
+          });
+
+          ctx.fillStyle = '#0b2b4a';
+          ctx.font = '700 18px Arial';
+          ctx.fillText('ℹ️ This report is generated for informational purposes only. Please consult a doctor for medical advice.', pagePadding + 18, canvas.height - 120);
+          ctx.fillStyle = '#4a6885';
+          ctx.font = '600 16px Arial';
+          ctx.fillText('🏢 Office Details: 4th Floor, Metro Station Madhapur, Q-Hub, near Madhapur, Hyderabad, Telangana 500033', pagePadding + 18, canvas.height - 80);
+
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve(dataUrl);
+        }).catch(() => {
+          reject(new Error('Image export failed while rendering report'));
+        });
+      });
+    }
+
+    // navigation
+    function setNavActive(view) {
+      const home = document.getElementById('navHome');
+      const screening = document.getElementById('navScreening');
+      if (home) home.classList.toggle('active', view === 'home');
+      if (screening) screening.classList.toggle('active', view === 'screening');
+    }
+
+    function showScreening() {
+      dashboardView.classList.add('hidden');
+      screeningForm.classList.remove('hidden');
+      reportView.classList.add('hidden');
+      syncCampaignToForm();
+      renderCheckups();
+      renderDynamicResults();
+      renderSummary();
+      setNavActive('screening');
+    }
+    function showDashboard() {
+      dashboardView.classList.remove('hidden');
+      screeningForm.classList.add('hidden');
+      reportView.classList.add('hidden');
+      editingRecordIndex = -1;
+      updateDashboardStats();
+      setNavActive('home');
+    }
+    window.showHistory = function() {
+      const preview = document.getElementById('historyPreview');
+      if (!screeningHistory.length) {
+        preview.innerHTML = '<div class="text-muted">No screenings yet.</div>';
+        return;
+      }
+      let html = `<div class="card"><div class="card-title"><i class="fas fa-clock-rotate-left"></i> Recent History</div><table class="history-table"><tr><th>ID</th><th>Name</th><th>Date</th><th>Tests</th><th></th></tr>`;
+      screeningHistory.slice(-3).reverse().forEach((s, idx) => {
+        const tests = Object.keys(s.checkups).filter(k => s.checkups[k]).join(', ');
+        const dataIndex = screeningHistory.length - 1 - idx; // Get actual index from the end
+        html += `<tr><td>${s.id}</td><td>${s.person.name}</td><td>${s.person.date}</td><td><span class="badge">${tests || '—'}</span></td><td><button class="btn btn-sm btn-outline" onclick="viewDetail(${dataIndex})"><i class="fas fa-eye"></i> View</button></td></tr>`;
+      });
+      html += '</table></div>';
+      preview.innerHTML = html;
+    };
+
+    function buildReportHtmlFromScreening(screening) {
+      const person = screening.person || {};
+      const selectedSummary = Array.isArray(screening.tests) ? screening.tests : [];
+      const detailRowsLeft = [
+        ['👤 Name', person.name || '—'],
+        ['📞 Phone', person.contact || '—'],
+        ['✉️ Email', person.email || '—'],
+        ['📍 Location', person.location || '—'],
+        ['🎂 Age', person.age ? `${person.age} years` : '—'],
+        ['⚧ Gender', person.gender || '—']
+      ];
+      const detailRowsRight = [
+        ['🏕️ Camp Location', person.camp || '—'],
+        ['📅 Date', person.date || '—'],
+        ['🕒 Time', person.time || '—'],
+        ['🧾 Report ID', screening.id || '—'],
+        ['💳 Payment Method', person.paymentMethod || '—'],
+        ['💰 Price', `${ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(screening))}/-`]
+      ];
+
+      const leftMarkup = detailRowsLeft.map(([key, val]) => `<div class="rr-list-row"><div class="rr-key">${key}</div><div class="rr-value">${val}</div></div>`).join('');
+      const rightMarkup = detailRowsRight.map(([key, val]) => `<div class="rr-list-row"><div class="rr-key">${key}</div><div class="rr-value">${val}</div></div>`).join('');
+
+      const tableRows = selectedSummary.map(item => {
+        if (typeof item === 'string') {
+          const label = item.split('|')[0] || item;
+          return `<tr><td>${label}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+        }
+        const label = item?.label || item?.name || 'Test';
+        const value = Array.isArray(item?.resultLines)
+          ? item.resultLines.join('<br>')
+          : (item?.value ?? '—');
+        const unit = item?.unit || '—';
+        const reference = Array.isArray(item?.referenceLines)
+          ? item.referenceLines.join('<br>')
+          : (item?.reference || '—');
+        const price = typeof item?.price === 'number' ? `₹${item.price}/-` : (item?.price || '—');
+        return `<tr><td>${label}</td><td>${value}</td><td>${unit}</td><td>${reference}</td><td>${price}</td></tr>`;
+      }).join('');
+
+      const testResultsGrid = selectedSummary.map(item => {
+        const label = typeof item === 'string' ? (item.split('|')[0] || item) : (item?.label || item?.name || 'Test');
+        const value = typeof item === 'string'
+          ? '✓'
+          : (Array.isArray(item?.resultLines) ? item.resultLines.join('<br>') : (item?.value ?? '✓'));
+        const unit = typeof item === 'string' ? '' : (item?.unit || '');
+        return `<div class="rr-result">
+          <div class="rr-result-icon">✅</div>
+          <div>
+            <div class="rr-result-name">${label}</div>
+            <div class="rr-result-value">${value}<span class="rr-result-unit">${unit}</span></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `
+        <div class="rr-paper">
+          <div class="rr-logo-row">
+            <div class="rr-logo-cell"><img src="visys-cloud .png" alt="Visys Cloud Technologies"></div>
+            <div class="rr-logo-cell"><img src="doctor in a box .jpeg" alt="Doctor in a Box"></div>
+          </div>
+
+          <div class="rr-banner">HEALTH SCREENING REPORT</div>
+
+          <div class="rr-grid">
+            <div class="rr-card">
+              <div class="rr-card-head">👤 Candidate Details</div>
+              ${leftMarkup}
+            </div>
+            <div class="rr-card">
+              <div class="rr-card-head green">📍 Camp / Test Details</div>
+              ${rightMarkup}
+            </div>
+          </div>
+
+          <div class="rr-section-title">Test Results</div>
+
+          <div class="rr-results" id="testResultsGrid">${testResultsGrid || '<div class="rr-result"><div class="rr-result-icon">✅</div><div><div class="rr-result-name">No test results</div><div class="rr-result-value">—</div></div></div>'}</div>
+
+          <div class="rr-table-wrap">
+            <div class="rr-table-title">🧪 Test Details</div>
+            <table class="rr-table">
+              <thead>
+                <tr>
+                  <th>Test Name</th>
+                  <th>Result</th>
+                  <th>Unit</th>
+                  <th>Reference Range</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows || '<tr><td colspan="5">No checkups selected</td></tr>'}
+                ${tableRows ? `<tr><td colspan="4"><b>Total Amount</b></td><td><b>${ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(screening))}/-</b></td></tr>` : ''}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="rr-note"><b>ℹ️ Note:</b> This report is generated for informational purposes only. Please consult a doctor for medical advice.</div>
+          <div class="rr-office"><b>🏢 Office Details:</b> 4th Floor, Metro Station Madhapur, Q-Hub, near Madhapur, Hyderabad, Telangana 500033</div>
+        </div>
+      `;
+    }
+
+    function exportScreeningToImageWithPreview(screening) {
+      const wasHidden = reportView.classList.contains('hidden');
+      const wasScreeningHidden = screeningForm.classList.contains('hidden');
+      if (wasHidden) reportView.classList.remove('hidden');
+      if (wasScreeningHidden) screeningForm.classList.remove('hidden');
+
+      const reportContent = document.getElementById('reportContent');
+      reportContent.innerHTML = buildReportHtmlFromScreening(screening);
+      reportContent._exportScreening = screening;
+
+      return convertReportToImage(reportContent).then((dataUrl) => {
+        delete reportContent._exportScreening;
+        if (wasHidden) reportView.classList.add('hidden');
+        if (wasScreeningHidden) screeningForm.classList.add('hidden');
+        return dataUrl;
+      }).catch((err) => {
+        delete reportContent._exportScreening;
+        if (wasHidden) reportView.classList.add('hidden');
+        if (wasScreeningHidden) screeningForm.classList.add('hidden');
+        throw err;
+      });
+    }
+
+    function startDownloadStatus(message) {
+      const statusMsg = document.createElement('div');
+      statusMsg.style.cssText = 'position:fixed;top:20px;left:20px;background:#2a7de1;color:white;padding:12px 16px;border-radius:8px;z-index:9999;font-weight:600;';
+      statusMsg.textContent = message;
+      document.body.appendChild(statusMsg);
+      return statusMsg;
+    }
+
+    window.downloadHistoryReportImage = function() {
+      if (currentDetailIndex === -1) return;
+      const screening = screeningHistory[currentDetailIndex];
+      if (!screening) return;
+
+      const statusMsg = startDownloadStatus('⏳ Generating history image...');
+      exportScreeningToImageWithPreview(screening).then(dataUrl => {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `history-${screening.id || 'report'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        statusMsg.textContent = '✅ Image downloaded successfully!';
+        setTimeout(() => statusMsg.remove(), 3000);
+      }).catch(err => {
+        console.error('History image error:', err);
+        statusMsg.textContent = '❌ Error generating image';
+        setTimeout(() => statusMsg.remove(), 3000);
+      });
+    };
+
+    window.downloadHistoryReportPdf = function() {
+      if (currentDetailIndex === -1) return;
+      const screening = screeningHistory[currentDetailIndex];
+      if (!screening) return;
+
+      const statusMsg = startDownloadStatus('⏳ Generating history PDF...');
+      const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+      if (!JsPDF) {
+        statusMsg.textContent = '❌ PDF library not loaded';
+        setTimeout(() => statusMsg.remove(), 3000);
+        return;
+      }
+
+      exportScreeningToImageWithPreview(screening).then(dataUrl => {
+        const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+        const maxWidth = pageWidth - (margin * 2);
+        const maxHeight = pageHeight - (margin * 2);
+
+        const img = new Image();
+        img.onload = () => {
+          const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+          const imgWidth = img.width * ratio;
+          const imgHeight = img.height * ratio;
+          const x = (pageWidth - imgWidth) / 2;
+          const y = margin;
+          pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
+          pdf.save(`history-${screening.id || 'report'}.pdf`);
+          statusMsg.textContent = '✅ PDF downloaded successfully!';
+          setTimeout(() => statusMsg.remove(), 3000);
+        };
+        img.onerror = () => {
+          statusMsg.textContent = '❌ Error generating PDF';
+          setTimeout(() => statusMsg.remove(), 3000);
+        };
+        img.src = dataUrl;
+      }).catch(err => {
+        console.error('History PDF error:', err);
+        statusMsg.textContent = '❌ Error generating PDF';
+        setTimeout(() => statusMsg.remove(), 3000);
+      });
+    };
+
+    // ========== DETAIL VIEW FUNCTIONS ==========
+    let currentDetailIndex = -1;
+
+    window.viewDetail = function(index) {
+      currentDetailIndex = index;
+      const screening = screeningHistory[index];
+      
+      if (!screening) {
+        alert('Screening record not found');
+        return;
+      }
+
+      // Populate patient info
+      document.getElementById('modalName').textContent = screening.person.name || '—';
+      document.getElementById('modalContact').textContent = screening.person.contact || '—';
+      document.getElementById('modalEmail').textContent = screening.person.email || '—';
+      document.getElementById('modalLocation').textContent = screening.person.location || '—';
+      document.getElementById('modalAge').textContent = screening.person.age ? screening.person.age + ' years' : '—';
+      document.getElementById('modalGender').textContent = screening.person.gender || '—';
+
+      // Populate screening details
+      document.getElementById('modalReportId').textContent = screening.id || '—';
+      document.getElementById('modalDate').textContent = screening.person.date || '—';
+      document.getElementById('modalTime').textContent = screening.person.time || '—';
+      document.getElementById('modalCamp').textContent = screening.person.camp || '—';
+      document.getElementById('modalPaymentMethod').textContent = screening.person.paymentMethod || '—';
+
+      // Populate test results
+      let testResultsHtml = '';
+      if (screening.tests && Array.isArray(screening.tests)) {
+        screening.tests.forEach(test => {
+          if (typeof test === 'string') {
+            const testLabel = test.split('|')[0] || test;
+            testResultsHtml += `<div class="test-result-item"><span class="label">${testLabel}</span><span class="value">✓</span></div>`;
+          } else if (typeof test === 'object') {
+            const testLabel = test.label || test.name || 'Test';
+            const testValue = Array.isArray(test.resultLines)
+              ? test.resultLines.join(' · ')
+              : [test.value ?? '✓', test.unit || ''].filter(Boolean).join(' ');
+            testResultsHtml += `<div class="test-result-item"><span class="label">${testLabel}</span><span class="value">${testValue}</span></div>`;
+          }
+        });
+      }
+      document.getElementById('modalTestResults').innerHTML = testResultsHtml;
+
+      // Populate amount
+      document.getElementById('modalAmount').textContent = `${ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(screening))}/-`;
+
+      // Show modal
+      document.getElementById('detailModal').classList.add('active');
+    };
+
+    window.closeDetailModal = function() {
+      document.getElementById('detailModal').classList.remove('active');
+      currentDetailIndex = -1;
+    };
+
+    window.editRecord = function(index) {
+      const targetIndex = typeof index === 'number' ? index : currentDetailIndex;
+      if (targetIndex < 0) return;
+      
+      const screening = screeningHistory[targetIndex];
+      if (!screening) return;
+
+      editingRecordIndex = targetIndex;
+      closeDetailModal();
+      
+      document.getElementById('pName').value = screening.person.name || '';
+      document.getElementById('pContact').value = screening.person.contact || '';
+      document.getElementById('pEmail').value = screening.person.email || '';
+      document.getElementById('pCamp').value = screening.person.camp || '';
+      document.getElementById('pLocation').value = screening.person.location || '';
+      document.getElementById('pPatientWa').value = screening.person.patientWa || '';
+      document.getElementById('pAge').value = screening.person.age || '';
+      document.getElementById('pGender').value = screening.person.gender || '';
+      document.getElementById('pPaymentMethod').value = screening.person.paymentMethod || '';
+
+      selected = { ...selected, ...(screening.checkups || {}) };
+      results = JSON.parse(JSON.stringify(screening.results || {}));
+
+      showScreening();
+      document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+      
+      const msg = document.createElement('div');
+      msg.innerHTML = '<div style="background:#e6f7ff; color:#0050b3; padding:12px; border-radius:8px; margin-bottom:16px;"><i class="fas fa-info-circle"></i> Record loaded. Generate the report to update this same record on every page.</div>';
+      document.getElementById('screeningForm').insertBefore(msg, document.getElementById('screeningForm').firstChild);
+      setTimeout(() => msg.remove(), 5000);
+    };
+
+    window.deleteRecord = function() {
+      if (currentDetailIndex === -1) return;
+      
+      const screening = screeningHistory[currentDetailIndex];
+      
+      if (confirm(`Are you sure you want to delete the screening record for ${screening.person.name} (${screening.id})? This action cannot be undone.`)) {
+        // Remove from history
+        screeningHistory.splice(currentDetailIndex, 1);
+        
+        // Save to localStorage
+        saveDashboardHistory();
+        updateDashboardStats();
+        
+        // Close modal
+        closeDetailModal();
+        
+        // Refresh history
+        showHistory();
+        
+        // Show success message
+        const msg = document.createElement('div');
+        msg.innerHTML = '<div style="background:#f6ffed; color:#135200; padding:12px; border-radius:8px; margin-bottom:16px;"><i class="fas fa-check-circle"></i> Record deleted successfully</div>';
+        document.getElementById('dashboardView').insertBefore(msg, document.getElementById('dashboardView').firstChild);
+        setTimeout(() => msg.remove(), 3000);
+      }
+    };
+
+    // Close modal when clicking outside
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeDetailModal();
+      }
+    });
+
+    // event listeners - wrapped in safety checks
+    const attachListener = (id, handler, fallback) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', handler);
+      } else {
+        console.warn(`Element ${id} not found for event listener`);
+        if (fallback) fallback();
+      }
+    };
+
+    const campaignInput = document.getElementById('campaignLocation');
+    if (campaignInput) {
+      campaignInput.addEventListener('input', (e) => {
+        setCampaignLocation(e.target.value, { save: true, syncForm: true });
+      });
+    }
+
+    const pCampInput = document.getElementById('pCamp');
+    if (pCampInput) {
+      pCampInput.addEventListener('input', (e) => {
+        setCampaignLocation(e.target.value, { save: true, syncForm: false });
+      });
+    }
+
+    attachListener('newScreeningBtn', showScreening);
+    attachListener('resetScreeningBtn', showDashboard);
+    attachListener('generateReportBtn', generateReport);
+    attachListener('whatsappShareBtn', shareViaWhatsApp);
+
+    const backBtn = document.getElementById('backFromReport');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        document.getElementById('reportView').classList.add('hidden');
+      });
+    }
+
+    const allCheckupsBtn = document.getElementById('allCheckupsBtn');
+    if (allCheckupsBtn) {
+      allCheckupsBtn.addEventListener('click', () => {
+        const shouldSelectAll = !checkupsDefault.every(c => selected[c.id]);
+        checkupsDefault.forEach(c => {
+          selected[c.id] = shouldSelectAll;
+        });
+        renderCheckups();
+        renderDynamicResults();
+        renderSummary();
+      });
+    }
+
+    // PDF Download handler
+    const pdfBtn = document.getElementById('pdfDownloadBtn');
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', function() {
+        const statusMsg = document.createElement('div');
+        statusMsg.style.cssText = 'position:fixed;top:20px;left:20px;background:#2a7de1;color:white;padding:12px 16px;border-radius:8px;z-index:9999;font-weight:600;';
+        statusMsg.textContent = '⏳ Generating PDF...';
+        document.body.appendChild(statusMsg);
+
+        const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+        if (!JsPDF) {
+          statusMsg.textContent = '❌ PDF library not loaded';
+          setTimeout(() => statusMsg.remove(), 3000);
+          alert('PDF library not loaded. Please refresh the page.');
+          return;
+        }
+
+        convertReportToImage().then(dataUrl => {
+          const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const margin = 8;
+          const maxWidth = pageWidth - (margin * 2);
+          const maxHeight = pageHeight - (margin * 2);
+
+          const img = new Image();
+          img.onload = () => {
+            const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+            const imgWidth = img.width * ratio;
+            const imgHeight = img.height * ratio;
+            const x = (pageWidth - imgWidth) / 2;
+            const y = margin;
+
+            pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
+            pdf.save(`health-screening-${lastGeneratedReport?.id || 'report'}.pdf`);
+            statusMsg.textContent = '✅ PDF downloaded successfully!';
+            setTimeout(() => statusMsg.remove(), 3000);
+          };
+          img.onerror = () => {
+            throw new Error('Could not load generated report image for PDF');
+          };
+          img.src = dataUrl;
+        }).catch(err => {
+          console.error('PDF error:', err);
+          statusMsg.textContent = '❌ Error generating PDF';
+          setTimeout(() => statusMsg.remove(), 3000);
+          alert('Error generating PDF: ' + err.message);
+        });
+      });
+    }
+
+    // Image Download handler
+    const imageBtn = document.getElementById('imageDownloadBtn');
+    if (imageBtn) {
+      imageBtn.addEventListener('click', function() {
+      const statusMsg = document.createElement('div');
+      statusMsg.style.cssText = 'position:fixed;top:20px;left:20px;background:#2a7de1;color:white;padding:12px 16px;border-radius:8px;z-index:9999;font-weight:600;';
+      statusMsg.textContent = '⏳ Generating image...';
+      document.body.appendChild(statusMsg);
+
+      convertReportToImage().then(dataUrl => {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `health-screening-${lastGeneratedReport?.id || 'report'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        statusMsg.textContent = '✅ Image downloaded successfully!';
+        setTimeout(() => statusMsg.remove(), 3000);
+      }).catch(err => {
+        console.error('Image error:', err);
+        statusMsg.textContent = '❌ Error generating image';
+        setTimeout(() => statusMsg.remove(), 3000);
+        alert('Error generating image: ' + err.message);
+      });
+      });
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === DASHBOARD_STORAGE_KEY) {
+        loadDashboardHistory();
+        if (campaignInput) campaignInput.value = campaignLocation;
+        updateDashboardStats();
+      }
+    });
+
+    // init
+    loadDashboardHistory();
+    if (campaignInput) campaignInput.value = campaignLocation;
+    updateDashboardStats();
+    setInterval(updateDashboardDateTime, 1000);
+    selected = { bp: true, sugar: true, oximetry: false, lipid: false, bmi: false, height: false, weight: false, temp: false, bloodgroup: false };
+    results = {};
+    renderCheckups();
+    renderDynamicResults();
+    renderSummary();
+    showDashboard();
+
+    const pageParams = new URLSearchParams(window.location.search);
+    const editId = pageParams.get('edit');
+    if (editId) {
+      const editIndex = screeningHistory.findIndex(item => item.id === editId);
+      if (editIndex >= 0) {
+        window.editRecord(editIndex);
+      } else {
+        showScreening();
+      }
+    } else if (pageParams.get('view') === 'screening') {
+      showScreening();
+    }
+
+    const navScreening = document.getElementById('navScreening');
+    if (navScreening) {
+      navScreening.addEventListener('click', (event) => {
+        event.preventDefault();
+        showScreening();
+        history.replaceState({}, '', '/?view=screening');
+      });
+    }
+    const navHome = document.getElementById('navHome');
+    if (navHome) {
+      navHome.addEventListener('click', (event) => {
+        event.preventDefault();
+        showDashboard();
+        history.replaceState({}, '', '/');
+      });
+    }
+  })();
+</script>
+</body>
+</html>

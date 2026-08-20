@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor in a Box · Records</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, sans-serif; }
+    body { background: #f4f8fc; color: #0b2b4a; min-height: 100vh; }
+    .wrap { width: min(100%, 1400px); margin: 0 auto; padding: 22px 18px 40px; }
+    .card { background: #fff; border: 1px solid #e3edf7; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(11,43,74,0.06); }
+    h1 { font-size: 1.7rem; margin-bottom: 6px; }
+    .sub { color: #4a6a85; margin-bottom: 18px; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    input, select { padding: 10px 12px; border: 1.5px solid #dde7ef; border-radius: 12px; font-size: 0.95rem; outline: none; min-width: 180px; }
+    input:focus, select:focus { border-color: #2a7de1; }
+    .btn { border: 0; background: #eef4fa; color: #0b2b4a; padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+    .btn-primary { background: #0b2b4a; color: #fff; }
+    .btn-edit { background: #1677ff; color: #fff; }
+    .btn-delete { background: #ff4d4f; color: #fff; }
+    .btn-sm { padding: 7px 12px; font-size: 0.8rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #ecf3f9; vertical-align: top; }
+    th { color: #2f5a7a; font-weight: 700; }
+    .badge { background: #e2ecf5; border-radius: 40px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; color: #1f4a6e; display: inline-block; margin: 2px 2px 0 0; }
+    .muted { color: #5a7d99; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 300; padding: 20px; overflow: auto; }
+    .modal.open { display: flex; align-items: flex-start; justify-content: center; }
+    .modal-box { background: #fff; width: min(100%, 760px); border-radius: 18px; padding: 22px; margin: 30px auto; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 0.78rem; font-weight: 700; color: #1f4a6e; display: block; margin-bottom: 4px; }
+    .full { grid-column: 1 / -1; }
+    .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="site-nav-inner">
+      <a class="site-nav-brand" href="/"><i class="fas fa-heartbeat"></i> Doctor in a Box</a>
+      <div class="site-nav-links">
+        <a href="/">Home</a>
+        <a href="/?view=screening">Screening</a>
+        <a class="active" href="/records">Records</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <h1>Master Records</h1>
+    <p class="sub">Every screening is listed here. Edit or delete a record and the Home page, Screening page, and Dashboard update from the same data.</p>
+    <div class="card">
+      <div class="toolbar">
+        <input id="searchBox" placeholder="Search name, ID, phone, camp">
+        <select id="paymentFilter">
+          <option value="">All payments</option>
+          <option value="Online">Online</option>
+          <option value="Cash">Cash</option>
+        </select>
+        <input id="dateFilter" type="date">
+        <button class="btn" id="clearFilters"><i class="fas fa-rotate-left"></i> Clear</button>
+      </div>
+      <div class="muted" id="countLabel" style="margin-bottom:10px;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Report ID</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Date / Time</th>
+              <th>Camp</th>
+              <th>Payment</th>
+              <th>Tests</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal" id="editModal">
+    <div class="modal-box">
+      <h2 style="margin-bottom:14px;">Edit Record</h2>
+      <input type="hidden" id="editIndex">
+      <div class="grid">
+        <div><label>Full Name</label><input id="eName"></div>
+        <div><label>Contact</label><input id="eContact"></div>
+        <div><label>Email</label><input id="eEmail"></div>
+        <div><label>Camp / Event</label><input id="eCamp"></div>
+        <div><label>Location</label><input id="eLocation"></div>
+        <div><label>Age</label><input id="eAge" type="number"></div>
+        <div>
+          <label>Gender</label>
+          <select id="eGender">
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div>
+          <label>Payment Method</label>
+          <select id="ePayment">
+            <option value="">Select</option>
+            <option value="Online">Online</option>
+            <option value="Cash">Cash</option>
+          </select>
+        </div>
+        <div><label>Date</label><input id="eDate" type="date"></div>
+        <div><label>Time</label><input id="eTime"></div>
+        <div class="full"><label>WhatsApp</label><input id="eWa"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="saveEdit"><i class="fas fa-save"></i> Save changes</button>
+        <button class="btn" id="fullEdit"><i class="fas fa-stethoscope"></i> Edit tests in Screening</button>
+        <button class="btn" id="closeEdit">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="screening-stats.js"></script>
+  <script>
+    let store = ScreeningStats.loadStore();
+
+    function reload() {
+      store = ScreeningStats.loadStore();
+      render();
+    }
+
+    function testsLabel(record) {
+      return ScreeningStats.selectedTestIds(record).map(id => ScreeningStats.getCheckup(id).label).join(', ') || '—';
+    }
+
+    function filtered() {
+      const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+      const pay = document.getElementById('paymentFilter').value;
+      const date = document.getElementById('dateFilter').value;
+      return store.history.map((record, index) => ({ record, index })).filter(({ record }) => {
+        const person = record.person || {};
+        const hay = [record.id, person.name, person.contact, person.email, person.camp, person.location].join(' ').toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        if (pay && person.paymentMethod !== pay) return false;
+        if (date && ScreeningStats.getScreeningDate(record) !== date) return false;
+        return true;
+      }).reverse();
+    }
+
+    function render() {
+      const list = filtered();
+      document.getElementById('countLabel').textContent = `Showing ${list.length} of ${store.history.length} records`;
+      document.getElementById('rows').innerHTML = list.map(({ record, index }) => {
+        const person = record.person || {};
+        return `<tr>
+          <td>${record.id || '—'}</td>
+          <td>${person.name || '—'}</td>
+          <td>${person.contact || '—'}</td>
+          <td>${person.date || ScreeningStats.getScreeningDate(record) || '—'}<br><span class="muted">${person.time || ''}</span></td>
+          <td>${person.camp || '—'}</td>
+          <td>${person.paymentMethod || '—'}</td>
+          <td>${ScreeningStats.selectedTestIds(record).map(id => `<span class="badge">${id}</span>`).join('') || '—'}</td>
+          <td>${ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(record))}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-edit" onclick="openEdit(${index})"><i class="fas fa-pen"></i> Edit</button>
+            <button class="btn btn-sm btn-delete" onclick="deleteRecord(${index})"><i class="fas fa-trash"></i> Delete</button>
+          </td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="9" class="muted">No records found.</td></tr>';
+    }
+
+    window.openEdit = function(index) {
+      const record = store.history[index];
+      if (!record) return;
+      const person = record.person || {};
+      document.getElementById('editIndex').value = index;
+      document.getElementById('eName').value = person.name || '';
+      document.getElementById('eContact').value = person.contact || '';
+      document.getElementById('eEmail').value = person.email || '';
+      document.getElementById('eCamp').value = person.camp || '';
+      document.getElementById('eLocation').value = person.location || '';
+      document.getElementById('eAge').value = person.age || '';
+      document.getElementById('eGender').value = person.gender || '';
+      document.getElementById('ePayment').value = person.paymentMethod || '';
+      document.getElementById('eDate').value = person.date || ScreeningStats.getScreeningDate(record) || '';
+      document.getElementById('eTime').value = person.time || '';
+      document.getElementById('eWa').value = person.patientWa || '';
+      document.getElementById('editModal').classList.add('open');
+    };
+
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('open');
+    }
+
+    document.getElementById('closeEdit').addEventListener('click', closeModal);
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target.id === 'editModal') closeModal();
+    });
+
+    document.getElementById('saveEdit').addEventListener('click', () => {
+      const index = Number(document.getElementById('editIndex').value);
+      const record = store.history[index];
+      if (!record) return;
+      record.person = record.person || {};
+      record.person.name = document.getElementById('eName').value.trim() || 'Unknown';
+      record.person.contact = document.getElementById('eContact').value.trim();
+      record.person.email = document.getElementById('eEmail').value.trim();
+      record.person.camp = document.getElementById('eCamp').value.trim();
+      record.person.location = document.getElementById('eLocation').value.trim();
+      record.person.age = document.getElementById('eAge').value.trim();
+      record.person.gender = document.getElementById('eGender').value;
+      record.person.paymentMethod = document.getElementById('ePayment').value;
+      record.person.date = document.getElementById('eDate').value;
+      record.person.time = document.getElementById('eTime').value.trim();
+      record.person.patientWa = document.getElementById('eWa').value.trim();
+      record.updatedAt = new Date().toISOString();
+      ScreeningStats.saveStore(store);
+      closeModal();
+      reload();
+      alert('Record updated. Home and Dashboard will show the new details.');
+    });
+
+    document.getElementById('fullEdit').addEventListener('click', () => {
+      const index = Number(document.getElementById('editIndex').value);
+      const record = store.history[index];
+      if (!record) return;
+      window.location.href = `/?view=screening&edit=${encodeURIComponent(record.id)}`;
+    });
+
+    window.deleteRecord = function(index) {
+      const record = store.history[index];
+      if (!record) return;
+      const name = record.person?.name || 'this record';
+      if (!confirm(`Delete ${name} (${record.id})? This cannot be undone and will update Home and Dashboard.`)) return;
+      store.history.splice(index, 1);
+      ScreeningStats.saveStore(store);
+      reload();
+    };
+
+    ['searchBox', 'paymentFilter', 'dateFilter'].forEach(id => {
+      document.getElementById(id).addEventListener('input', render);
+      document.getElementById(id).addEventListener('change', render);
+    });
+    document.getElementById('clearFilters').addEventListener('click', () => {
+      document.getElementById('searchBox').value = '';
+      document.getElementById('paymentFilter').value = '';
+      document.getElementById('dateFilter').value = '';
+      render();
+    });
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === ScreeningStats.STORAGE_KEY) reload();
+    });
+
+    render();
+  </script>
+</body>
+</html>

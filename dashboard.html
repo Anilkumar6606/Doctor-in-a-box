@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor in a Box · Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    :root {
+      --ink: #081431;
+      --muted: #52617a;
+      --line: #dbe5f2;
+      --page: #f5f8fc;
+      --card: #ffffff;
+      --blue: #1677ff;
+      --green: #15a13a;
+      --teal: #11a8b4;
+      --amber: #f59f12;
+      --pink: #ec3f87;
+      --violet: #7247d8;
+      --shadow: 0 14px 36px rgba(20, 38, 70, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--ink);
+    }
+
+    .shell {
+      width: min(100%, 1800px);
+      margin: 0 auto;
+      padding: 14px 22px 22px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 238px 1fr auto;
+      gap: 28px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .brand-panel {
+      border-right: 1px solid var(--line);
+      padding-right: 28px;
+    }
+
+    .brand-panel img {
+      width: 186px;
+      max-width: 100%;
+      height: 70px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .title h1 {
+      font-size: 1.75rem;
+      line-height: 1.1;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .title p {
+      color: var(--ink);
+      font-size: 1rem;
+    }
+
+    .date-picker {
+      min-width: 276px;
+      height: 60px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 8px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--ink);
+      box-shadow: 0 10px 28px rgba(26, 50, 84, 0.04);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .date-picker i {
+      color: var(--ink);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      min-height: 132px;
+      grid-column: span 3;
+      padding: 26px 26px 20px;
+      display: grid;
+      grid-template-columns: auto 1fr 112px;
+      gap: 22px;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(22, 119, 255, 0.04), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .metric:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(20, 38, 70, 0.12);
+      border-color: #c7d8ef;
+    }
+
+    .metric:hover::after {
+      opacity: 1;
+    }
+
+    .metric.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12), var(--shadow);
+    }
+
+    .metric.active::after {
+      opacity: 1;
+    }
+
+    .metric:focus-visible {
+      outline: 3px solid rgba(22, 119, 255, 0.35);
+      outline-offset: 2px;
+    }
+
+    .metric-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .metric-icon.money {
+      background: #ccefd8;
+      color: #087221;
+    }
+
+    .metric-icon.people {
+      background: #d4e4ff;
+      color: var(--blue);
+    }
+
+    .metric-label {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin-bottom: 12px;
+    }
+
+    .metric-change {
+      color: var(--green);
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .metric-change span {
+      color: var(--muted);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .spark {
+      width: 112px;
+      height: 54px;
+    }
+
+    .panel {
+      padding: 22px 26px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .panel-title h2 {
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .panel-title h2 span {
+      font-weight: 500;
+    }
+
+    .select-pill {
+      min-width: 94px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .overview {
+      grid-column: span 7;
+      min-height: 390px;
+    }
+
+    .distribution {
+      grid-column: span 5;
+      min-height: 390px;
+    }
+
+    .metric-change.down {
+      color: #ef314c;
+    }
+
+    .metric-detail {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 500;
+      min-height: 1rem;
+    }
+
+    .metric-pulse {
+      animation: metricPulse 0.55s ease;
+    }
+
+    @keyframes metricPulse {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.04); color: var(--blue); }
+      100% { transform: scale(1); }
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eaf7ef;
+      color: #0f7a2d;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid #c8ead4;
+    }
+
+    .live-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #15a13a;
+      box-shadow: 0 0 0 0 rgba(21, 161, 58, 0.55);
+      animation: livePulse 1.8s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(21, 161, 58, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(21, 161, 58, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(21, 161, 58, 0); }
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-btn,
+    .select-pill {
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .icon-btn:hover,
+    .select-pill:hover {
+      transform: translateY(-1px);
+      border-color: #bfd2ea;
+      background: #f8fbff;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 60px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 10px 28px rgba(26, 50, 84, 0.04);
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      border-color: #bfd2ea;
+      background: #f8fbff;
+    }
+
+    .icon-btn {
+      width: 60px;
+      height: 60px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--blue);
+      font-size: 1.1rem;
+      box-shadow: 0 10px 28px rgba(26, 50, 84, 0.04);
+    }
+
+    .date-picker-wrap {
+      position: relative;
+    }
+
+    .date-picker {
+      cursor: pointer;
+      border: 0;
+      width: 100%;
+      font: inherit;
+    }
+
+    .date-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 280px;
+      max-height: 320px;
+      overflow: auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 18px 40px rgba(20, 38, 70, 0.14);
+      padding: 8px;
+      display: none;
+      z-index: 20;
+    }
+
+    .date-menu.open {
+      display: block;
+      animation: fadeUp 0.18s ease;
+    }
+
+    .date-option {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font: inherit;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .date-option:hover,
+    .date-option.active {
+      background: #eef5ff;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .chart-wrap {
+      height: 315px;
+      position: relative;
+    }
+
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(8, 20, 49, 0.94);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      box-shadow: 0 12px 28px rgba(8, 20, 49, 0.25);
+      opacity: 0;
+      transform: translate(-50%, -110%);
+      transition: opacity 0.12s ease;
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .legend-row:hover,
+    .legend-row.active {
+      background: #f3f8ff;
+      transform: translateX(2px);
+    }
+
+  .summary tbody tr,
+  #recentRows tr {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .summary tbody tr:hover,
+    #recentRows tr:hover,
+    #topTests tr:hover,
+    #bottomTests tr:hover {
+      background: #f7fbff;
+    }
+
+    .summary tbody tr.selected {
+      background: #eef5ff;
+    }
+
+    .panel.highlight {
+      animation: panelGlow 1.1s ease;
+    }
+
+    @keyframes panelGlow {
+      0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.35); }
+      100% { box-shadow: var(--shadow); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .range-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 140px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 18px 40px rgba(20, 38, 70, 0.14);
+      padding: 8px;
+      display: none;
+      z-index: 15;
+    }
+
+    .range-menu.open {
+      display: block;
+    }
+
+    .range-option {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .range-option:hover,
+    .range-option.active {
+      background: #eef5ff;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .panel-title .select-wrap {
+      position: relative;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend-inline {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .legend-inline span {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .legend-dot {
+      width: 30px;
+      height: 2px;
+      background: var(--green);
+      position: relative;
+      display: inline-block;
+    }
+
+    .legend-dot::after {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      position: absolute;
+      left: 10px;
+      top: -3.5px;
+    }
+
+    .distribution-body {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(250px, 1.05fr);
+      gap: 24px;
+      align-items: center;
+    }
+
+    .donut-wrap {
+      width: 280px;
+      max-width: 100%;
+      aspect-ratio: 1;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .test-legend {
+      display: grid;
+      gap: 8px;
+      font-size: 0.86rem;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-row strong {
+      font-weight: 800;
+      margin-left: 16px;
+    }
+
+    .distribution-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      border-top: 1px solid var(--line);
+      margin-top: 18px;
+      padding-top: 14px;
+      font-size: 0.9rem;
+    }
+
+    .distribution-footer b {
+      display: block;
+      margin-top: 7px;
+      color: var(--blue);
+    }
+
+    .distribution-footer .low b,
+    .distribution-footer .low span {
+      color: #ff7a00;
+    }
+
+    .summary {
+      grid-column: span 6;
+    }
+
+    .revenue-summary {
+      grid-column: span 12;
+    }
+
+    .revenue-summary table td:last-child,
+    .revenue-summary table th:last-child {
+      text-align: right;
+    }
+
+    .side-table {
+      grid-column: span 3;
+    }
+
+    .recent {
+      grid-column: span 6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    th {
+      text-align: left;
+      color: var(--ink);
+      background: #f7f9fc;
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 1px solid #e6edf6;
+      padding: 9px 12px;
+      color: #17223b;
+      white-space: nowrap;
+    }
+
+    .summary tbody tr:last-child td {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      color: var(--blue);
+      font-weight: 800;
+      background: #f9fbfe;
+      padding-top: 13px;
+      padding-bottom: 13px;
+    }
+
+    .up {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .down {
+      color: #ef314c;
+      font-weight: 800;
+    }
+
+    .note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .side-table th:first-child {
+      background: #eaf7ef;
+    }
+
+    .bottom-table th:first-child {
+      background: #f9fafc;
+    }
+
+    .recent {
+      margin-top: -2px;
+    }
+
+    .link {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 0.92rem;
+    }
+
+    .callout {
+      grid-column: 1 / -1;
+      min-height: 86px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 22px;
+      align-items: center;
+      padding: 18px 28px;
+    }
+
+    .callout-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      background: #eaf3ff;
+      font-size: 1.6rem;
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .callout p {
+      color: var(--ink);
+      font-size: 0.93rem;
+    }
+
+    .callout-center {
+      font-weight: 800;
+      justify-self: center;
+    }
+
+    .trend-icon {
+      color: var(--blue);
+      font-size: 3.1rem;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    @media (max-width: 1200px) {
+      .metric {
+        grid-column: span 6;
+      }
+
+      .overview,
+      .distribution,
+      .summary,
+      .side-table,
+      .recent {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        padding: 12px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .brand-panel {
+        border-right: 0;
+        padding-right: 0;
+      }
+
+      .title h1 {
+        font-size: 1.45rem;
+      }
+
+      .date-picker {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .metric {
+        grid-column: 1 / -1;
+        grid-template-columns: auto 1fr;
+      }
+
+      .spark {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .chart-wrap {
+        height: 270px;
+      }
+
+      .distribution-body,
+      .distribution-footer,
+      .callout {
+        grid-template-columns: 1fr;
+      }
+
+      .callout-center {
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="site-nav-inner">
+      <a class="site-nav-brand" href="/"><i class="fas fa-heartbeat"></i> Doctor in a Box</a>
+      <div class="site-nav-links">
+        <a href="/">Home</a>
+        <a href="/?view=screening">Screening</a>
+        <a href="/records">Records</a>
+        <a class="active" href="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand-panel" href="/" aria-label="Doctor in a Box home">
+        <img src="doctor in a box .jpeg" alt="Doctor in a Box">
+      </a>
+      <section class="title">
+        <h1>Dashboard</h1>
+        <p>Daily overview of campaign performance, tests and revenue.</p>
+      </section>
+      <div class="top-actions">
+        <span class="live-badge" id="liveBadge">Live data</span>
+        <button class="icon-btn" id="refreshBtn" type="button" title="Refresh dashboard" aria-label="Refresh dashboard">
+          <i class="fas fa-rotate-right"></i>
+        </button>
+        <div class="date-picker-wrap">
+          <button class="date-picker" id="datePickerBtn" type="button" aria-label="Selected dashboard date" aria-expanded="false">
+            <i class="far fa-calendar"></i>
+            <span id="dateLabel">Today</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="date-menu" id="dateMenu" role="menu" aria-label="Select dashboard date"></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="dashboard-grid" aria-label="Doctor in a Box dashboard">
+      <article class="card metric" data-metric="totalIncome" tabindex="0" role="button" aria-label="Total Income details">
+        <div class="metric-icon money">₹</div>
+        <div>
+          <div class="metric-label">Total Income</div>
+          <div class="metric-value" id="totalIncome">₹ 0</div>
+          <div class="metric-change" id="totalIncomeChange"><i class="fas fa-arrow-up"></i> 0% <span>vs Till Yesterday</span></div>
+          <div class="metric-detail" id="totalIncomeDetail">Tap to view income trend</div>
+        </div>
+        <canvas class="spark" data-color="#15a13a" data-values="0"></canvas>
+      </article>
+
+      <article class="card metric" data-metric="todayIncome" tabindex="0" role="button" aria-label="Today Income details">
+        <div class="metric-icon money">₹</div>
+        <div>
+          <div class="metric-label">Today Income</div>
+          <div class="metric-value" id="todayIncome">₹ 0</div>
+          <div class="metric-change" id="todayIncomeChange"><i class="fas fa-arrow-up"></i> 0% <span>vs Yesterday</span></div>
+          <div class="metric-detail" id="todayIncomeDetail">Tap to highlight selected day</div>
+        </div>
+        <canvas class="spark" data-color="#15a13a" data-values="0"></canvas>
+      </article>
+
+      <article class="card metric" data-metric="totalCustomers" tabindex="0" role="button" aria-label="Total Customers details">
+        <div class="metric-icon people"><i class="fas fa-users"></i></div>
+        <div>
+          <div class="metric-label">Total Customers</div>
+          <div class="metric-value" id="totalCustomers">0</div>
+          <div class="metric-change" id="totalCustomersChange"><i class="fas fa-arrow-up"></i> 0% <span>vs Till Yesterday</span></div>
+          <div class="metric-detail" id="totalCustomersDetail">Tap to view customer summary</div>
+        </div>
+        <canvas class="spark" data-color="#1677ff" data-values="0"></canvas>
+      </article>
+
+      <article class="card metric" data-metric="todayCustomers" tabindex="0" role="button" aria-label="Today Customers details">
+        <div class="metric-icon people"><i class="fas fa-users"></i></div>
+        <div>
+          <div class="metric-label">Today Customers</div>
+          <div class="metric-value" id="todayCustomers">0</div>
+          <div class="metric-change" id="todayCustomersChange"><i class="fas fa-arrow-up"></i> 0% <span>vs Yesterday</span></div>
+          <div class="metric-detail" id="todayCustomersDetail">Tap to view recent tests</div>
+        </div>
+        <canvas class="spark" data-color="#1677ff" data-values="0"></canvas>
+      </article>
+
+      <article class="card panel revenue-summary" id="revenueSummaryPanel">
+        <div class="panel-title">
+          <h2>Revenue &amp; Checkups <span id="revenueSummaryLabel">(Today vs Total)</span></h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Selected Day</th>
+                <th>All Time</th>
+              </tr>
+            </thead>
+            <tbody id="revenueSummaryRows"></tbody>
+          </table>
+        </div>
+        <div class="note"><i class="far fa-circle-info"></i> Amounts are calculated from each report's selected tests. Cash = in-hand payments.</div>
+      </article>
+
+      <article class="card panel overview" id="overviewPanel">
+        <div class="panel-title">
+          <h2 id="overviewTitle">Overview <span>(Free, Paid &amp; Income)</span></h2>
+          <div class="select-wrap">
+            <button class="select-pill" id="rangeBtn" type="button" aria-expanded="false">Daily <i class="fas fa-chevron-down"></i></button>
+            <div class="range-menu" id="rangeMenu" role="menu">
+              <button class="range-option active" data-range="daily" type="button">Daily</button>
+              <button class="range-option" data-range="weekly" type="button">Weekly</button>
+              <button class="range-option" data-range="monthly" type="button">Monthly</button>
+            </div>
+          </div>
+        </div>
+        <div class="legend-inline">
+          <span><i class="legend-swatch" style="background:#11a8b4"></i> Free tests</span>
+          <span><i class="legend-swatch" style="background:#f59f12"></i> Paid tests</span>
+          <span><i class="legend-swatch" style="background:#15a13a"></i> Income (₹)</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="overviewChart" aria-label="Daily tests and income chart"></canvas>
+          <div class="chart-tooltip" id="overviewTooltip"></div>
+        </div>
+      </article>
+
+      <article class="card panel distribution" id="distributionPanel">
+        <div class="panel-title">
+          <h2>Test Distribution <span>(By Test Type) - Today</span></h2>
+        </div>
+        <div class="distribution-body">
+          <div class="donut-wrap">
+            <canvas id="donutChart" aria-label="Test distribution donut chart"></canvas>
+          </div>
+          <div class="test-legend" id="testLegend"></div>
+        </div>
+        <div class="distribution-footer">
+          <div>Highest <b id="highestTest">No data <span>0 (0%)</span></b></div>
+          <div class="low">Lowest <b id="lowestTest">No data <span>0 (0%)</span></b></div>
+        </div>
+      </article>
+
+      <article class="card panel summary">
+        <div class="panel-title">
+          <h2>Daily Wise Summary <span>(Last 14 Days)</span></h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Tests Done</th>
+                <th>Income (₹)</th>
+                <th>New Customers</th>
+                <th>Avg. Order Value (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="summaryRows"></tbody>
+          </table>
+        </div>
+        <div class="note"><i class="far fa-circle-info"></i> Note: All amounts are in INR. Data is updated in real-time.</div>
+      </article>
+
+      <article class="card panel side-table">
+        <div class="panel-title">
+          <h2>Top 5 Tests <span>(Today)</span></h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Test Name</th><th>Tests</th><th>%</th></tr>
+            </thead>
+            <tbody id="topTests"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card panel side-table bottom-table">
+        <div class="panel-title">
+          <h2>Bottom 5 Tests <span>(Today)</span></h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Test Name</th><th>Tests</th><th>%</th></tr>
+            </thead>
+            <tbody id="bottomTests"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card panel recent">
+        <div class="panel-title">
+          <h2>Recent Tests Done <span>(Today)</span></h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Customer Name</th>
+                <th>Mobile Number</th>
+                <th>Tests</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="recentRows"></tbody>
+          </table>
+        </div>
+        <a href="index.html" class="link">Go to Screening <i class="fas fa-arrow-right"></i></a>
+      </article>
+
+      <aside class="card callout">
+        <div class="callout-icon"><i class="fas fa-bullseye"></i></div>
+        <div>
+          <strong>Nice Work!</strong>
+          <p id="calloutText">No completed tests are available yet.</p>
+        </div>
+        <div class="callout-center">Keep going! Your efforts are making a difference.</div>
+        <i class="fas fa-arrow-trend-up trend-icon"></i>
+      </aside>
+    </section>
+  </main>
+
+  <script src="screening-stats.js"></script>
+  <script>
+    const STORAGE_KEY = "dibScreeningHistory";
+    const checkupsDefault = ScreeningStats.CHECKUPS;
+    const testColors = ["#1677ff", "#26b447", "#7247d8", "#ff9f1c", "#11a8b4", "#ec3f87", "#f4c542", "#c7c7c7"];
+
+    let daily = [];
+    let distribution = [];
+    let recent = [];
+    let allDates = [];
+    let selectedDate = ScreeningStats.getLocalDateIso();
+    let chartRange = "daily";
+    let activeMetric = "";
+    let highlightedTestId = "";
+    let overviewPoints = [];
+    let overviewHoverIndex = -1;
+    let distributionHoverIndex = -1;
+    let metricsSnapshot = null;
+
+    function readHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        return Array.isArray(saved.history) ? saved.history : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function getCheckup(id) {
+      return checkupsDefault.find(item => item.id === id) || { id, label: id, price: 0 };
+    }
+
+    function selectedTestIds(record) {
+      return ScreeningStats.selectedTestIds(record);
+    }
+
+    function reportAmount(record) {
+      return ScreeningStats.getRecordAmount(record);
+    }
+
+    function reportDate(record) {
+      return ScreeningStats.getScreeningDate(record);
+    }
+
+    function customerKey(record) {
+      return (record.person?.contact || record.person?.name || record.id || "").trim().toLowerCase();
+    }
+
+    function formatMoney(value) {
+      return ScreeningStats.formatMoney(value);
+    }
+
+    function formatDateLabel(isoDate, includeToday) {
+      if (!isoDate) return "No reports yet";
+      const date = new Date(`${isoDate}T00:00:00`);
+      const label = date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      const todayIso = ScreeningStats.getLocalDateIso();
+      return includeToday && isoDate === todayIso ? `${label} (Today)` : label;
+    }
+
+    function percentChange(current, previous) {
+      if (!previous && !current) return 0;
+      if (!previous) return 100;
+      return ((current - previous) / previous) * 100;
+    }
+
+    function renderChange(id, value, suffix) {
+      const el = document.getElementById(id);
+      const isUp = value >= 0;
+      el.classList.toggle("down", !isUp);
+      el.innerHTML = `<i class="fas fa-arrow-${isUp ? "up" : "down"}"></i> ${Math.abs(value).toFixed(1)}% <span>${suffix}</span>`;
+    }
+
+    function animateCounter(element, target, formatter, duration = 700) {
+      const start = Number(element.dataset.value || 0);
+      const end = Number(target || 0);
+      if (start === end) {
+        element.textContent = formatter(end);
+        element.dataset.value = String(end);
+        return;
+      }
+      const startTime = performance.now();
+      const step = (now) => {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = start + (end - start) * eased;
+        element.textContent = formatter(current);
+        if (progress < 1) requestAnimationFrame(step);
+        else {
+          element.textContent = formatter(end);
+          element.dataset.value = String(end);
+          element.classList.add("metric-pulse");
+          setTimeout(() => element.classList.remove("metric-pulse"), 550);
+        }
+      };
+      requestAnimationFrame(step);
+    }
+
+    function groupDailyRows(rows) {
+      if (chartRange === "daily") return rows.slice(-14);
+      const buckets = new Map();
+      rows.forEach(row => {
+        const date = new Date(`${row.date}T00:00:00`);
+        let key = row.date;
+        let label = row.label;
+        if (chartRange === "weekly") {
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          key = ScreeningStats.getLocalDateIso(weekStart);
+          label = `Wk ${weekStart.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`;
+        } else if (chartRange === "monthly") {
+          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+          label = date.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+        }
+        if (!buckets.has(key)) {
+          buckets.set(key, {
+            date: key,
+            label,
+            tests: 0,
+            freeTests: 0,
+            paidTests: 0,
+            income: 0,
+            customers: 0,
+            reports: 0,
+            today: false
+          });
+        }
+        const bucket = buckets.get(key);
+        bucket.tests += row.tests || 0;
+        bucket.freeTests += row.freeTests || 0;
+        bucket.paidTests += row.paidTests || 0;
+        bucket.income += row.income || 0;
+        bucket.customers += row.customers || 0;
+        bucket.reports += row.reports || 0;
+        if (row.today) bucket.today = true;
+      });
+      const grouped = Array.from(buckets.values()).sort((a, b) => a.date.localeCompare(b.date));
+      return chartRange === "monthly" ? grouped.slice(-12) : grouped.slice(-12);
+    }
+
+    function buildDashboardData() {
+      const history = readHistory();
+      const todayIso = ScreeningStats.getLocalDateIso();
+      allDates = [...new Set(history.map(reportDate).filter(Boolean))].sort();
+      if (!allDates.includes(selectedDate)) {
+        allDates.push(selectedDate);
+        allDates.sort();
+      }
+
+      const rowsByDate = new Map();
+      const testCounts = new Map();
+      const totalCustomers = new Set();
+      const todayCustomers = new Set();
+      let totalIncome = 0;
+      let totalIncomeBeforeSelectedDate = 0;
+
+      history.forEach(record => {
+        const date = reportDate(record);
+        if (!date) return;
+        const ids = selectedTestIds(record);
+        const amount = reportAmount(record);
+        const key = customerKey(record);
+        totalIncome += amount;
+        if (date < selectedDate) totalIncomeBeforeSelectedDate += amount;
+        if (key) totalCustomers.add(key);
+        if (date === selectedDate && key) todayCustomers.add(key);
+
+        if (!rowsByDate.has(date)) {
+          rowsByDate.set(date, { date, tests: 0, freeTests: 0, paidTests: 0, income: 0, customers: new Set(), reports: 0 });
+        }
+        const row = rowsByDate.get(date);
+        const entries = ScreeningStats.getTestEntries(record);
+        row.tests += entries.length;
+        row.freeTests += entries.filter(test => test.price <= 0).length;
+        row.paidTests += entries.filter(test => test.price > 0).length;
+        row.income += amount;
+        row.reports += 1;
+        if (key) row.customers.add(key);
+
+        if (date === selectedDate) {
+          ids.forEach(id => testCounts.set(id, (testCounts.get(id) || 0) + 1));
+        }
+      });
+
+      const overallStats = ScreeningStats.computeStats(history, { today: todayIso });
+      const selectedDayStats = ScreeningStats.computeDayStats(history, selectedDate);
+
+      daily = Array.from(rowsByDate.values())
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(row => ({
+          date: row.date,
+          label: new Date(`${row.date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+          tests: row.tests,
+          freeTests: row.freeTests,
+          paidTests: row.paidTests,
+          income: row.income,
+          customers: row.customers.size,
+          reports: row.reports,
+          today: row.date === selectedDate
+        }));
+
+      const chartDaily = groupDailyRows(daily);
+      const selectedRow = rowsByDate.get(selectedDate);
+      const selectedDay = selectedRow ? {
+        tests: selectedRow.tests,
+        income: selectedRow.income,
+        customers: selectedRow.customers.size,
+        reports: selectedRow.reports
+      } : {
+        tests: selectedDayStats.todayCheckups,
+        income: selectedDayStats.todayAmount,
+        customers: 0,
+        reports: selectedDayStats.todayScreenings
+      };
+      const previousDay = daily[daily.findIndex(row => row.date === selectedDate) - 1] || { tests: 0, income: 0, customers: 0 };
+      const selectedTotalTests = Array.from(testCounts.values()).reduce((sum, count) => sum + count, 0);
+
+      const titleEl = document.getElementById("overviewTitle");
+      if (titleEl) {
+        const rangeLabel = chartRange === "weekly" ? "Weekly" : chartRange === "monthly" ? "Monthly" : "Daily";
+        titleEl.innerHTML = `${rangeLabel} Overview <span>(Free, Paid &amp; Income)</span>`;
+      }
+
+      const cumulativeIncome = [];
+      const cumulativeCustomers = [];
+      daily.reduce((sum, item) => {
+        cumulativeIncome.push(sum + item.income);
+        return sum + item.income;
+      }, 0);
+      daily.reduce((sum, item) => {
+        cumulativeCustomers.push(sum + item.customers);
+        return sum + item.customers;
+      }, 0);
+
+      const sparks = document.querySelectorAll(".spark");
+      if (sparks[0]) sparks[0].dataset.values = (cumulativeIncome.length ? cumulativeIncome : [0]).join(",");
+      if (sparks[1]) sparks[1].dataset.values = (daily.length ? daily.map(item => item.income) : [0]).join(",");
+      if (sparks[2]) sparks[2].dataset.values = (cumulativeCustomers.length ? cumulativeCustomers : [0]).join(",");
+      if (sparks[3]) sparks[3].dataset.values = (daily.length ? daily.map(item => item.customers) : [0]).join(",");
+
+      distribution = Array.from(testCounts.entries())
+        .map(([id, count], index) => {
+          const test = getCheckup(id);
+          return {
+            id,
+            name: test.label,
+            count,
+            pct: selectedTotalTests ? (count / selectedTotalTests) * 100 : 0,
+            color: testColors[index % testColors.length]
+          };
+        })
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+      recent = history
+        .filter(record => reportDate(record) === selectedDate)
+        .slice()
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+        .slice(0, 8)
+        .map(record => [
+          record.person?.time || "--",
+          record.person?.name || "Unknown",
+          record.person?.contact || "--",
+          selectedTestIds(record).map(id => getCheckup(id).label).join(", ") || "--",
+          reportAmount(record).toLocaleString("en-IN")
+        ]);
+
+      metricsSnapshot = {
+        totalIncome,
+        todayIncome: selectedDay.income,
+        totalCustomers: totalCustomers.size,
+        todayCustomers: todayCustomers.size,
+        selectedDay,
+        previousDay,
+        totalIncomeBeforeSelectedDate,
+        chartDaily,
+        overallStats,
+        selectedDayStats
+      };
+
+      document.getElementById("dateLabel").textContent = formatDateLabel(selectedDate, true);
+      document.getElementById("totalIncomeDetail").textContent = `${history.length} reports · ${formatMoney(totalIncomeBeforeSelectedDate)} before selected day`;
+      document.getElementById("todayIncomeDetail").textContent = `${selectedDay.reports} report(s) on ${formatDateLabel(selectedDate, false)}`;
+      document.getElementById("totalCustomersDetail").textContent = `${totalCustomers.size} unique patients overall`;
+      document.getElementById("todayCustomersDetail").textContent = `${todayCustomers.size} new patient(s) on selected day`;
+      document.getElementById("calloutText").textContent = selectedDay.tests
+        ? `You have completed ${selectedDay.tests} tests and generated ${formatMoney(selectedDay.income)} income on ${formatDateLabel(selectedDate, false)}.`
+        : "Generate reports from the screening page to see live dashboard performance.";
+      document.getElementById("liveBadge").textContent = history.length ? `Live · ${history.length} reports` : "Live · waiting for data";
+    }
+
+    function renderMetrics(animate = true) {
+      if (!metricsSnapshot) return;
+      const {
+        totalIncome,
+        todayIncome,
+        totalCustomers,
+        todayCustomers,
+        selectedDay,
+        previousDay,
+        totalIncomeBeforeSelectedDate
+      } = metricsSnapshot;
+
+      const totalIncomeEl = document.getElementById("totalIncome");
+      const todayIncomeEl = document.getElementById("todayIncome");
+      const totalCustomersEl = document.getElementById("totalCustomers");
+      const todayCustomersEl = document.getElementById("todayCustomers");
+
+      if (animate) {
+        animateCounter(totalIncomeEl, totalIncome, value => formatMoney(value));
+        animateCounter(todayIncomeEl, todayIncome, value => formatMoney(value));
+        animateCounter(totalCustomersEl, totalCustomers, value => Math.round(value).toLocaleString("en-IN"));
+        animateCounter(todayCustomersEl, todayCustomers, value => Math.round(value).toLocaleString("en-IN"));
+      } else {
+        totalIncomeEl.textContent = formatMoney(totalIncome);
+        todayIncomeEl.textContent = formatMoney(todayIncome);
+        totalCustomersEl.textContent = totalCustomers.toLocaleString("en-IN");
+        todayCustomersEl.textContent = todayCustomers.toLocaleString("en-IN");
+      }
+
+      renderChange("totalIncomeChange", percentChange(totalIncome, totalIncomeBeforeSelectedDate), "vs Till Yesterday");
+      renderChange("todayIncomeChange", percentChange(selectedDay.income, previousDay.income), "vs Yesterday");
+      renderChange("totalCustomersChange", percentChange(totalCustomers, Math.max(0, totalCustomers - todayCustomers)), "vs Till Yesterday");
+      renderChange("todayCustomersChange", percentChange(selectedDay.customers, previousDay.customers), "vs Yesterday");
+    }
+
+    function renderDateMenu() {
+      const menu = document.getElementById("dateMenu");
+      const todayIso = ScreeningStats.getLocalDateIso();
+      const dates = [...new Set([todayIso, ...allDates])].sort().reverse();
+      menu.innerHTML = dates.map(date => {
+        const day = daily.find(item => item.date === date);
+        const suffix = day && day.reports ? `${day.reports} report(s) · ${formatMoney(day.income)}` : "No reports";
+        return `<button class="date-option${date === selectedDate ? " active" : ""}" type="button" data-date="${date}">
+          <span>${formatDateLabel(date, true)}</span>
+          <span>${suffix}</span>
+        </button>`;
+      }).join("");
+    }
+
+    function setSelectedDate(date, animate = true) {
+      selectedDate = date;
+      refreshDashboard(animate);
+    }
+
+    function highlightPanel(id) {
+      const panel = document.getElementById(id);
+      if (!panel) return;
+      panel.classList.remove("highlight");
+      void panel.offsetWidth;
+      panel.classList.add("highlight");
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function setActiveMetric(metric) {
+      activeMetric = metric;
+      document.querySelectorAll(".metric").forEach(card => {
+        card.classList.toggle("active", card.dataset.metric === metric);
+      });
+      if (metric === "totalIncome" || metric === "todayIncome") highlightPanel("overviewPanel");
+      if (metric === "totalCustomers" || metric === "todayCustomers") highlightPanel("distributionPanel");
+      if (metric === "todayCustomers") {
+        document.querySelector(".recent")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function scale(value, min, max, size) {
+      return size - ((value - min) / (max - min)) * size;
+    }
+
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    function drawSparkline(canvas) {
+      const values = canvas.dataset.values.split(",").map(Number);
+      const color = canvas.dataset.color;
+      const { ctx, width, height } = setupCanvas(canvas);
+      const min = Math.min(...values, 0) - 4;
+      const max = Math.max(...values, 1) + 4;
+      const step = values.length > 1 ? width / (values.length - 1) : width;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const x = index * step;
+        const y = scale(value, min, max, height - 8) + 4;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      const lastX = (values.length - 1) * step;
+      const lastY = scale(values[values.length - 1], min, max, height - 8) + 4;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function getOverviewSeries() {
+      return metricsSnapshot?.chartDaily?.length ? metricsSnapshot.chartDaily : daily;
+    }
+
+    function drawOverview() {
+      const canvas = document.getElementById("overviewChart");
+      const series = getOverviewSeries();
+      const { ctx, width, height } = setupCanvas(canvas);
+      const pad = { left: 44, right: 56, top: 16, bottom: 38 };
+      const chartW = width - pad.left - pad.right;
+      const chartH = height - pad.top - pad.bottom;
+      overviewPoints = [];
+
+      ctx.clearRect(0, 0, width, height);
+      if (!series.length) {
+        ctx.fillStyle = "#52617a";
+        ctx.font = "14px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("No chart data yet", width / 2, height / 2);
+        return;
+      }
+
+      const maxTests = Math.max(5, ...series.map(item => Math.max(item.freeTests || 0, item.paidTests || 0, item.tests || 0)));
+      const maxIncome = Math.max(100, ...series.map(item => item.income || 0));
+      const groupW = chartW / series.length;
+      const barW = Math.max(6, groupW * 0.2);
+      const gap = Math.max(2, groupW * 0.04);
+
+      ctx.strokeStyle = "#dce4ef";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i <= 5; i++) {
+        const y = pad.top + (chartH / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+        ctx.fillStyle = "#081431";
+        ctx.textAlign = "right";
+        ctx.fillText(String(Math.round(maxTests - i * (maxTests / 5))), pad.left - 10, y);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#15a13a";
+        ctx.fillText(formatAxisMoney(maxIncome - i * (maxIncome / 5)), width - pad.right + 8, y);
+      }
+
+      series.forEach((item, index) => {
+        const groupX = pad.left + index * groupW;
+        const startX = groupX + (groupW - (barW * 3 + gap * 2)) / 2;
+        const freeH = ((item.freeTests || 0) / maxTests) * chartH;
+        const paidH = ((item.paidTests || 0) / maxTests) * chartH;
+        const incomeH = ((item.income || 0) / maxIncome) * chartH;
+        const isSelected = item.date === selectedDate || item.today;
+        const isHover = index === overviewHoverIndex;
+        const bars = [
+          { x: startX, h: freeH, color: isHover || isSelected ? "#13c3d0" : "#11a8b4" },
+          { x: startX + barW + gap, h: paidH, color: isHover || isSelected ? "#ffb347" : "#f59f12" },
+          { x: startX + (barW + gap) * 2, h: incomeH, color: isHover || isSelected ? "#22c24d" : "#15a13a" }
+        ];
+        bars.forEach(bar => {
+          const y = pad.top + chartH - bar.h;
+          ctx.fillStyle = bar.color;
+          ctx.beginPath();
+          ctx.roundRect(bar.x, y, barW, Math.max(bar.h, 1), 3);
+          ctx.fill();
+        });
+        ctx.save();
+        ctx.translate(groupX + groupW / 2, height - 13);
+        ctx.fillStyle = isSelected ? "#1677ff" : "#081431";
+        ctx.font = isSelected ? "700 11px Inter, sans-serif" : "11px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(item.label, 0, 0);
+        ctx.restore();
+        overviewPoints.push({
+          x: groupX + groupW / 2,
+          y: pad.top + chartH - incomeH,
+          item,
+          index
+        });
+      });
+    }
+
+    function formatAxisMoney(value) {
+      if (value >= 100000) return `${Math.round(value / 1000)}K`;
+      if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+      return String(Math.round(value));
+    }
+
+    function drawDonut() {
+      const canvas = document.getElementById("donutChart");
+      const { ctx, width, height } = setupCanvas(canvas);
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) / 2 - 4;
+      const inner = radius * 0.38;
+      let start = -Math.PI / 2;
+
+      ctx.clearRect(0, 0, width, height);
+      if (!distribution.length) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#e8eef6";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        ctx.fillStyle = "#52617a";
+        ctx.font = "700 14px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("No data", cx, cy);
+        return;
+      }
+
+      distribution.forEach((item, index) => {
+        const angle = Math.PI * 2 * (item.pct / 100);
+        const active = highlightedTestId === item.id || index === distributionHoverIndex;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, active ? radius + 4 : radius, start, start + angle);
+        ctx.closePath();
+        ctx.fillStyle = item.color;
+        ctx.globalAlpha = highlightedTestId && highlightedTestId !== item.id ? 0.35 : 1;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = active ? 3 : 2;
+        ctx.stroke();
+
+        if (item.pct >= 8) {
+          const mid = start + angle / 2;
+          const labelR = radius * 0.62;
+          ctx.fillStyle = item.color === "#f4c542" || item.color === "#c7c7c7" ? "#081431" : "#fff";
+          ctx.font = "700 12px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(`${item.pct.toFixed(0)}%`, cx + Math.cos(mid) * labelR, cy + Math.sin(mid) * labelR);
+        }
+        start += angle;
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      const focus = distribution[distributionHoverIndex] || distribution.find(item => item.id === highlightedTestId) || distribution[0];
+      ctx.fillStyle = "#081431";
+      ctx.font = "800 18px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(focus.count), cx, cy - 8);
+      ctx.fillStyle = "#52617a";
+      ctx.font = "600 11px Inter, sans-serif";
+      ctx.fillText(focus.name.length > 16 ? `${focus.name.slice(0, 14)}...` : focus.name, cx, cy + 12);
+    }
+
+    function showOverviewTooltip(point, clientX, clientY) {
+      const tooltip = document.getElementById("overviewTooltip");
+      const wrap = tooltip.parentElement.getBoundingClientRect();
+      tooltip.innerHTML = `<strong>${point.item.label}</strong><br>Free tests: ${point.item.freeTests || 0}<br>Paid tests: ${point.item.paidTests || 0}<br>Income: ${formatMoney(point.item.income || 0)}`;
+      tooltip.style.left = `${clientX - wrap.left}px`;
+      tooltip.style.top = `${clientY - wrap.top}px`;
+      tooltip.classList.add("visible");
+    }
+
+    function hideOverviewTooltip() {
+      document.getElementById("overviewTooltip").classList.remove("visible");
+    }
+
+    function renderRevenueSummary() {
+      if (!metricsSnapshot) return;
+      const { overallStats, selectedDayStats } = metricsSnapshot;
+      const label = document.getElementById("revenueSummaryLabel");
+      if (label) {
+        label.textContent = `(${formatDateLabel(selectedDate, true)} vs All Time)`;
+      }
+
+      const rows = [
+        ["Screenings", selectedDayStats.todayScreenings, overallStats.totalScreenings],
+        ["Total Checkups", selectedDayStats.todayCheckups, overallStats.totalCheckups],
+        ["Free Checkups", selectedDayStats.todayFreeCheckups, overallStats.freeCheckups],
+        ["Paid Checkups", selectedDayStats.todayPaidCheckups, overallStats.paidCheckups],
+        ["Online Amount", formatMoney(selectedDayStats.todayOnlineAmount), formatMoney(overallStats.onlineAmount)],
+        ["Cash Amount", formatMoney(selectedDayStats.todayCashAmount), formatMoney(overallStats.cashAmount)],
+        ["Total Amount", formatMoney(selectedDayStats.todayAmount), formatMoney(overallStats.totalAmount)]
+      ];
+
+      document.getElementById("revenueSummaryRows").innerHTML = rows.map(([metric, dayValue, totalValue]) => (
+        `<tr><td>${metric}</td><td>${dayValue}</td><td>${totalValue}</td></tr>`
+      )).join("");
+    }
+
+    function renderTables() {
+      const summaryRows = document.getElementById("summaryRows");
+      summaryRows.innerHTML = daily.slice().reverse().map((item, index, arr) => {
+        const previous = arr[index + 1] || item;
+        const testsTrend = item.tests >= previous.tests ? "up" : "down";
+        const incomeTrend = item.income >= previous.income ? "up" : "down";
+        const customerTrend = item.customers >= previous.customers ? "up" : "down";
+        const label = formatDateLabel(item.date, item.today);
+        return `<tr data-date="${item.date}" class="${item.date === selectedDate ? "selected" : ""}">
+          <td>${label}</td>
+          <td>${item.tests} <span class="${testsTrend}">${testsTrend === "up" ? "↑" : "↓"}</span></td>
+          <td>${item.income.toLocaleString("en-IN")} <span class="${incomeTrend}">${incomeTrend === "up" ? "↑" : "↓"}</span></td>
+          <td>${item.customers} <span class="${customerTrend}">${customerTrend === "up" ? "↑" : "↓"}</span></td>
+          <td>${item.tests ? Math.round(item.income / item.tests) : 0}</td>
+        </tr>`;
+      }).join("");
+
+      const totals = daily.reduce((all, item) => ({
+        tests: all.tests + item.tests,
+        income: all.income + item.income,
+        customers: all.customers + item.customers
+      }), { tests: 0, income: 0, customers: 0 });
+      summaryRows.innerHTML += `<tr><td>Total</td><td>${totals.tests.toLocaleString("en-IN")}</td><td>${totals.income.toLocaleString("en-IN")}</td><td>${totals.customers.toLocaleString("en-IN")}</td><td>${totals.tests ? Math.round(totals.income / totals.tests) : 0}</td></tr>`;
+      if (!daily.length) summaryRows.innerHTML = `<tr><td colspan="5">No generated reports yet</td></tr>`;
+
+      const topRows = distribution.slice(0, 5).map((item, index) => (
+        `<tr data-test-id="${item.id}"><td>${index + 1}. ${item.name}</td><td>${item.count}</td><td>${item.pct.toFixed(1)}%</td></tr>`
+      )).join("");
+      document.getElementById("topTests").innerHTML = topRows || `<tr><td colspan="3">No tests yet</td></tr>`;
+
+      const bottomRows = distribution.slice().reverse().slice(0, 5).map((item, index) => (
+        `<tr data-test-id="${item.id}"><td>${index + 1}. ${item.name}</td><td>${item.count}</td><td>${item.pct.toFixed(1)}%</td></tr>`
+      )).join("");
+      document.getElementById("bottomTests").innerHTML = bottomRows || `<tr><td colspan="3">No tests yet</td></tr>`;
+
+      document.getElementById("recentRows").innerHTML = recent.map(item => (
+        `<tr><td>${item[0]}</td><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td><td>${item[4]}</td></tr>`
+      )).join("") || `<tr><td colspan="5">No tests generated for this date</td></tr>`;
+
+      document.getElementById("testLegend").innerHTML = distribution.map((item, index) => (
+        `<div class="legend-row${highlightedTestId === item.id || index === distributionHoverIndex ? " active" : ""}" data-test-id="${item.id}" data-index="${index}">
+          <span class="swatch" style="background:${item.color}"></span>
+          <span>${item.name}</span>
+          <span><strong>${item.count}</strong> (${item.pct.toFixed(1)}%)</span>
+        </div>`
+      )).join("") || `<div class="legend-row"><span class="swatch" style="background:#c7c7c7"></span><span>No tests generated yet</span><span><strong>0</strong> (0%)</span></div>`;
+
+      const highest = distribution[0];
+      const lowest = distribution[distribution.length - 1];
+      document.getElementById("highestTest").innerHTML = highest ? `${highest.name} <span>${highest.count} (${highest.pct.toFixed(1)}%)</span>` : `No data <span>0 (0%)</span>`;
+      document.getElementById("lowestTest").innerHTML = lowest ? `${lowest.name} <span>${lowest.count} (${lowest.pct.toFixed(1)}%)</span>` : `No data <span>0 (0%)</span>`;
+    }
+
+    function drawAll() {
+      document.querySelectorAll(".spark").forEach(drawSparkline);
+      drawOverview();
+      drawDonut();
+    }
+
+    function refreshDashboard(animate = true) {
+      buildDashboardData();
+      renderDateMenu();
+      renderMetrics(animate);
+      renderRevenueSummary();
+      renderTables();
+      drawAll();
+    }
+
+    function bindInteractions() {
+      document.querySelectorAll(".metric").forEach(card => {
+        const activate = () => setActiveMetric(card.dataset.metric);
+        card.addEventListener("click", activate);
+        card.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            activate();
+          }
+        });
+      });
+
+      const dateBtn = document.getElementById("datePickerBtn");
+      const dateMenu = document.getElementById("dateMenu");
+      dateBtn.addEventListener("click", () => {
+        const open = dateMenu.classList.toggle("open");
+        dateBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      dateMenu.addEventListener("click", event => {
+        const option = event.target.closest(".date-option");
+        if (!option) return;
+        setSelectedDate(option.dataset.date);
+        dateMenu.classList.remove("open");
+        dateBtn.setAttribute("aria-expanded", "false");
+      });
+
+      const rangeBtn = document.getElementById("rangeBtn");
+      const rangeMenu = document.getElementById("rangeMenu");
+      rangeBtn.addEventListener("click", () => {
+        const open = rangeMenu.classList.toggle("open");
+        rangeBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      rangeMenu.addEventListener("click", event => {
+        const option = event.target.closest(".range-option");
+        if (!option) return;
+        chartRange = option.dataset.range;
+        rangeMenu.querySelectorAll(".range-option").forEach(btn => btn.classList.toggle("active", btn === option));
+        const label = chartRange === "weekly" ? "Weekly" : chartRange === "monthly" ? "Monthly" : "Daily";
+        rangeBtn.innerHTML = `${label} <i class="fas fa-chevron-down"></i>`;
+        rangeMenu.classList.remove("open");
+        refreshDashboard(false);
+      });
+
+      document.getElementById("refreshBtn").addEventListener("click", () => {
+        const btn = document.getElementById("refreshBtn");
+        btn.classList.add("metric-pulse");
+        refreshDashboard(true);
+        setTimeout(() => btn.classList.remove("metric-pulse"), 550);
+      });
+
+      document.getElementById("summaryRows").addEventListener("click", event => {
+        const row = event.target.closest("tr[data-date]");
+        if (!row) return;
+        setSelectedDate(row.dataset.date);
+      });
+
+      document.getElementById("testLegend").addEventListener("click", event => {
+        const row = event.target.closest(".legend-row[data-test-id]");
+        if (!row) return;
+        highlightedTestId = highlightedTestId === row.dataset.testId ? "" : row.dataset.testId;
+        distributionHoverIndex = Number(row.dataset.index);
+        renderTables();
+        drawDonut();
+      });
+
+      ["topTests", "bottomTests"].forEach(id => {
+        document.getElementById(id).addEventListener("click", event => {
+          const row = event.target.closest("tr[data-test-id]");
+          if (!row) return;
+          highlightedTestId = row.dataset.testId;
+          distributionHoverIndex = distribution.findIndex(item => item.id === highlightedTestId);
+          renderTables();
+          drawDonut();
+          highlightPanel("distributionPanel");
+        });
+      });
+
+      const overviewCanvas = document.getElementById("overviewChart");
+      overviewCanvas.addEventListener("mousemove", event => {
+        const rect = overviewCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        let nearest = -1;
+        let nearestDistance = Infinity;
+        overviewPoints.forEach(point => {
+          const distance = Math.abs(point.x - x);
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = point.index;
+          }
+        });
+        if (nearestDistance > 40) {
+          overviewHoverIndex = -1;
+          hideOverviewTooltip();
+          drawOverview();
+          return;
+        }
+        overviewHoverIndex = nearest;
+        const point = overviewPoints.find(item => item.index === nearest);
+        if (point) showOverviewTooltip(point, event.clientX, event.clientY);
+        drawOverview();
+      });
+      overviewCanvas.addEventListener("mouseleave", () => {
+        overviewHoverIndex = -1;
+        hideOverviewTooltip();
+        drawOverview();
+      });
+      overviewCanvas.addEventListener("click", event => {
+        const rect = overviewCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const point = overviewPoints.find(item => Math.abs(item.x - x) < 30);
+        if (point?.item?.date) setSelectedDate(point.item.date);
+      });
+
+      const donutCanvas = document.getElementById("donutChart");
+      donutCanvas.addEventListener("mousemove", event => {
+        const rect = donutCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left - rect.width / 2;
+        const y = event.clientY - rect.top - rect.height / 2;
+        const distance = Math.sqrt(x * x + y * y);
+        const outer = Math.min(rect.width, rect.height) / 2 - 4;
+        const inner = outer * 0.38;
+        if (distance < inner || distance > outer + 8 || !distribution.length) {
+          distributionHoverIndex = -1;
+          drawDonut();
+          return;
+        }
+        let angle = Math.atan2(y, x) + Math.PI / 2;
+        if (angle < 0) angle += Math.PI * 2;
+        let cursor = 0;
+        let hoverIndex = distribution.length - 1;
+        distribution.forEach((item, index) => {
+          const slice = Math.PI * 2 * (item.pct / 100);
+          if (angle >= cursor && angle < cursor + slice) hoverIndex = index;
+          cursor += slice;
+        });
+        distributionHoverIndex = hoverIndex;
+        drawDonut();
+      });
+      donutCanvas.addEventListener("mouseleave", () => {
+        distributionHoverIndex = -1;
+        drawDonut();
+      });
+      donutCanvas.addEventListener("click", () => {
+        if (distributionHoverIndex >= 0) {
+          highlightedTestId = distribution[distributionHoverIndex].id;
+          renderTables();
+          drawDonut();
+        }
+      });
+
+      document.addEventListener("click", event => {
+        if (!event.target.closest(".date-picker-wrap")) {
+          dateMenu.classList.remove("open");
+          dateBtn.setAttribute("aria-expanded", "false");
+        }
+        if (!event.target.closest(".select-wrap")) {
+          rangeMenu.classList.remove("open");
+          rangeBtn.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      window.addEventListener("storage", event => {
+        if (event.key === STORAGE_KEY) refreshDashboard(true);
+      });
+      setInterval(() => refreshDashboard(false), 5000);
+    }
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        return this;
+      };
+    }
+
+    bindInteractions();
+    refreshDashboard(true);
+    window.addEventListener("resize", drawAll);
+  </script>
+</body>
+</html>
