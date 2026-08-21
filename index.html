@@ -1210,12 +1210,25 @@
       return new File([bytes], filename, { type: mime });
     }
 
-    function getReferenceRange(id) {
-      if (id === 'bp') return '90/60 - 120/80 mmHg';
-      if (id === 'sugar') return '70 - 140 mg/dL';
+    function getReferenceRange(id, options = {}) {
+      if (id === 'bp') return '100/70 - 120/80 mmHg';
+      if (id === 'sugar') {
+        const type = String(options.testType || results.sugar?.testType || 'Fasting').toLowerCase();
+        if (type.includes('post')) return '120 - 180 mg/dL';
+        if (type.includes('random')) return '≤160 mg/dL';
+        return '70 - 180 mg/dL';
+      }
       if (id === 'oximetry') return 'SpO₂: 95-100% | Pulse: 60-100 bpm';
       if (id === 'lipid') return 'TC: <200 | HDL: >40 | LDL: <100 | TG: <150 mg/dL';
+      if (id === 'temp') return '96.4°F – 99.1°F (35.8°C – 37.3°C)';
       return 'As per clinical range';
+    }
+
+    function getSugarReferenceLines(testType) {
+      const type = String(testType || results.sugar?.testType || 'Fasting').toLowerCase();
+      if (type.includes('post')) return ['Post: 120 - 180 mg/dL'];
+      if (type.includes('random')) return ['Random: ≤160 mg/dL'];
+      return ['Fasting: 70 - 180 mg/dL'];
     }
 
     function getReportTestDisplay(c) {
@@ -1249,6 +1262,39 @@
           resultLines: resultLines.length ? resultLines : ['—'],
           unit: 'mg/dL',
           referenceLines: ['TC: <200', 'HDL: >40', 'LDL: <100', 'TG: <150', 'VLDL: <30'],
+          price: c.price
+        };
+      }
+      if (c.id === 'bp') {
+        const result = getCheckupResult(c);
+        return {
+          id: c.id,
+          label: getReportTestLabel(c),
+          resultLines: [result.value || '—'],
+          unit: result.unit || 'mmHg',
+          referenceLines: ['100/70 - 120/80 mmHg'],
+          price: c.price
+        };
+      }
+      if (c.id === 'sugar') {
+        const result = getCheckupResult(c);
+        return {
+          id: c.id,
+          label: getReportTestLabel(c),
+          resultLines: [result.value || '—'],
+          unit: result.unit || 'mg/dL',
+          referenceLines: getSugarReferenceLines(results.sugar?.testType),
+          price: c.price
+        };
+      }
+      if (c.id === 'temp') {
+        const result = getCheckupResult(c);
+        return {
+          id: c.id,
+          label: getReportTestLabel(c),
+          resultLines: [result.value || '—'],
+          unit: result.unit || '°F',
+          referenceLines: ['96.4°F – 99.1°F', '(35.8°C – 37.3°C)'],
           price: c.price
         };
       }
@@ -1304,6 +1350,36 @@
           resultLines: resultLines.length ? resultLines : ['—'],
           unit: test.unit || 'mg/dL',
           referenceLines: ['TC: <200', 'HDL: >40', 'LDL: <100', 'TG: <150', 'VLDL: <30']
+        };
+      }
+      if (id === 'bp') {
+        return {
+          ...test,
+          label: test.label || 'Blood Pressure',
+          resultLines: [test.value ?? '—'],
+          unit: test.unit || 'mmHg',
+          referenceLines: ['100/70 - 120/80 mmHg']
+        };
+      }
+      if (id === 'sugar') {
+        const label = test.label || 'Blood Sugar';
+        const typeMatch = String(label).match(/\(([^)]+)\)/);
+        const testType = typeMatch?.[1] || 'Fasting';
+        return {
+          ...test,
+          label,
+          resultLines: [test.value ?? '—'],
+          unit: test.unit || 'mg/dL',
+          referenceLines: getSugarReferenceLines(testType)
+        };
+      }
+      if (id === 'temp') {
+        return {
+          ...test,
+          label: test.label || 'Body Temperature',
+          resultLines: [test.value ?? '—'],
+          unit: test.unit || '°F',
+          referenceLines: ['96.4°F – 99.1°F', '(35.8°C – 37.3°C)']
         };
       }
 
@@ -2237,8 +2313,8 @@
           });
 
           const writes = [
-            ['Blood Pressure', document.querySelector('.bp-sys')?.value ? `${document.querySelector('.bp-sys').value}/${document.querySelector('.bp-dia')?.value || '—'}` : '—', 'mmHg', '90/60 - 120/80', 'Free'],
-            ['Blood Sugar', document.querySelector('.sugar-result')?.value || '—', 'mg/dL', '70 - 140', '₹50/-']
+            ['Blood Pressure', document.querySelector('.bp-sys')?.value ? `${document.querySelector('.bp-sys').value}/${document.querySelector('.bp-dia')?.value || '—'}` : '—', 'mmHg', '100/70 - 120/80', 'Free'],
+            ['Blood Sugar', document.querySelector('.sugar-result')?.value || '—', 'mg/dL', getReferenceRange('sugar'), '₹50/-']
           ];
 
           writes.forEach((row, idx) => {
