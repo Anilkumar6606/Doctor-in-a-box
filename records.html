@@ -13,12 +13,22 @@
     .wrap { width: min(100%, 1400px); margin: 0 auto; padding: 22px 18px 40px; }
     .card { background: #fff; border: 1px solid #e3edf7; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(11,43,74,0.06); }
     h1 { font-size: 1.7rem; margin-bottom: 6px; }
-    .sub { color: #4a6a85; margin-bottom: 18px; }
+    .sub { color: #4a6a85; margin-bottom: 12px; }
+    .db-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 16px; padding: 10px 14px; border-radius: 12px;
+      background: #eef6ff; border: 1px solid #d6e8fa; font-size: 0.9rem;
+    }
+    .db-bar.offline { background: #fff4f0; border-color: #ffd0c4; }
+    .db-dot { width: 10px; height: 10px; border-radius: 50%; background: #26b447; }
+    .db-bar.offline .db-dot { background: #ff4d4f; }
     .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
     input, select { padding: 10px 12px; border: 1.5px solid #dde7ef; border-radius: 12px; font-size: 0.95rem; outline: none; min-width: 180px; }
     input:focus, select:focus { border-color: #2a7de1; }
     .btn { border: 0; background: #eef4fa; color: #0b2b4a; padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+    .btn:disabled { opacity: 0.55; cursor: wait; }
     .btn-primary { background: #0b2b4a; color: #fff; }
+    .btn-view { background: #0b2b4a; color: #fff; }
     .btn-edit { background: #1677ff; color: #fff; }
     .btn-delete { background: #ff4d4f; color: #fff; }
     .btn-sm { padding: 7px 12px; font-size: 0.8rem; }
@@ -36,7 +46,22 @@
     label { font-size: 0.78rem; font-weight: 700; color: #1f4a6e; display: block; margin-bottom: 4px; }
     .full { grid-column: 1 / -1; }
     .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .detail-item { background: #f7fbff; border: 1px solid #e3edf7; border-radius: 12px; padding: 10px 12px; }
+    .detail-item .k { font-size: 0.72rem; color: #5a7d99; font-weight: 700; margin-bottom: 4px; }
+    .detail-item .v { font-weight: 600; word-break: break-word; }
+    .tests-box { margin-top: 14px; }
+    .tests-box table { font-size: 0.85rem; }
+    .toast {
+      position: fixed; right: 18px; bottom: 18px; z-index: 400;
+      background: #0b2b4a; color: #fff; padding: 12px 16px; border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2); display: none; max-width: min(90vw, 360px);
+    }
+    .toast.show { display: block; }
+    .toast.err { background: #b42318; }
+    @media (max-width: 720px) {
+      .grid, .detail-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -53,8 +78,16 @@
   </nav>
 
   <main class="wrap">
-    <h1>Master Records</h1>
-    <p class="sub">Every screening is listed here. Edit or delete a record and the Home page, Screening page, and Dashboard update from the same data.</p>
+    <h1>Master Records (PostgreSQL)</h1>
+    <p class="sub">View complete candidate details. Edit or delete here — changes are saved to the database so everyone on the shared link sees the same data.</p>
+
+    <div class="db-bar offline" id="dbBar">
+      <span class="db-dot"></span>
+      <strong id="dbStatus">Checking database…</strong>
+      <span class="muted" id="dbHint">Open this page from your Flask/Render URL so data syncs to PostgreSQL.</span>
+      <button class="btn btn-sm" id="refreshBtn" type="button"><i class="fas fa-sync"></i> Refresh from DB</button>
+    </div>
+
     <div class="card">
       <div class="toolbar">
         <input id="searchBox" placeholder="Search name, ID, phone, camp">
@@ -88,10 +121,36 @@
     </div>
   </main>
 
+  <!-- VIEW complete details -->
+  <div class="modal" id="viewModal">
+    <div class="modal-box">
+      <h2 style="margin-bottom:14px;">Candidate Details</h2>
+      <div class="detail-grid" id="viewDetails"></div>
+      <div class="tests-box">
+        <h3 style="margin-bottom:8px; font-size:1rem;">Test Results</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Test</th><th>Result</th><th>Unit</th><th>Price</th></tr>
+            </thead>
+            <tbody id="viewTests"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-edit" id="viewToEdit"><i class="fas fa-pen"></i> Edit</button>
+        <button class="btn btn-delete" id="viewToDelete"><i class="fas fa-trash"></i> Delete from DB</button>
+        <button class="btn" id="closeView">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT -->
   <div class="modal" id="editModal">
     <div class="modal-box">
-      <h2 style="margin-bottom:14px;">Edit Record</h2>
+      <h2 style="margin-bottom:14px;">Update Record in PostgreSQL</h2>
       <input type="hidden" id="editIndex">
+      <input type="hidden" id="editId">
       <div class="grid">
         <div><label>Full Name</label><input id="eName"></div>
         <div><label>Contact</label><input id="eContact"></div>
@@ -120,24 +179,75 @@
         <div class="full"><label>WhatsApp</label><input id="eWa"></div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-primary" id="saveEdit"><i class="fas fa-save"></i> Save changes</button>
+        <button class="btn btn-primary" id="saveEdit"><i class="fas fa-save"></i> Save to Database</button>
         <button class="btn" id="fullEdit"><i class="fas fa-stethoscope"></i> Edit tests in Screening</button>
         <button class="btn" id="closeEdit">Cancel</button>
       </div>
     </div>
   </div>
 
+  <div class="toast" id="toast"></div>
+
   <script src="screening-stats.js"></script>
   <script>
     let store = ScreeningStats.loadStore();
+    let dbOnline = false;
+    let viewingIndex = -1;
+
+    function toast(msg, isError) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.toggle('err', !!isError);
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    function setDbStatus(online, detail) {
+      dbOnline = online;
+      const bar = document.getElementById('dbBar');
+      bar.classList.toggle('offline', !online);
+      document.getElementById('dbStatus').textContent = online
+        ? 'Connected to PostgreSQL'
+        : 'Database offline / local only';
+      document.getElementById('dbHint').textContent = detail || (
+        online
+          ? 'View, Edit, and Delete update the shared database.'
+          : 'Start Flask (or use Render Web Service + Postgres). Static Netlify links will not share data.'
+      );
+    }
 
     function reload() {
       store = ScreeningStats.loadStore();
       render();
     }
 
-    function testsLabel(record) {
-      return ScreeningStats.selectedTestIds(record).map(id => ScreeningStats.getCheckup(id).label).join(', ') || '—';
+    async function syncAndReload() {
+      try {
+        const ok = await ScreeningStats.checkApi();
+        if (!ok) {
+          setDbStatus(false);
+          reload();
+          return;
+        }
+        const synced = await ScreeningStats.syncFromApi({ migrateIfLocal: true });
+        store = {
+          history: synced.history || [],
+          counter: synced.counter || 1,
+          campaignLocation: synced.campaignLocation || ''
+        };
+        localStorage.setItem(ScreeningStats.STORAGE_KEY, JSON.stringify(store));
+        render();
+        setDbStatus(
+          synced.source === 'postgres',
+          synced.source === 'postgres'
+            ? `${store.history.length} records loaded from PostgreSQL.`
+            : `${store.history.length} records (local cache).`
+        );
+      } catch (err) {
+        console.warn('PostgreSQL sync skipped', err);
+        setDbStatus(false, String(err.message || err));
+        reload();
+      }
     }
 
     function filtered() {
@@ -169,6 +279,7 @@
           <td>${ScreeningStats.selectedTestIds(record).map(id => `<span class="badge">${id}</span>`).join('') || '—'}</td>
           <td>${ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(record))}</td>
           <td class="actions">
+            <button class="btn btn-sm btn-view" onclick="openView(${index})"><i class="fas fa-eye"></i> View</button>
             <button class="btn btn-sm btn-edit" onclick="openEdit(${index})"><i class="fas fa-pen"></i> Edit</button>
             <button class="btn btn-sm btn-delete" onclick="deleteRecord(${index})"><i class="fas fa-trash"></i> Delete</button>
           </td>
@@ -176,11 +287,51 @@
       }).join('') || '<tr><td colspan="9" class="muted">No records found.</td></tr>';
     }
 
+    function detailItem(k, v) {
+      return `<div class="detail-item"><div class="k">${k}</div><div class="v">${v || '—'}</div></div>`;
+    }
+
+    window.openView = function(index) {
+      const record = store.history[index];
+      if (!record) return;
+      viewingIndex = index;
+      const person = record.person || {};
+      document.getElementById('viewDetails').innerHTML = [
+        detailItem('Report ID', record.id),
+        detailItem('Name', person.name),
+        detailItem('Phone', person.contact),
+        detailItem('WhatsApp', person.patientWa),
+        detailItem('Email', person.email),
+        detailItem('Age', person.age ? `${person.age} years` : ''),
+        detailItem('Gender', person.gender),
+        detailItem('Camp', person.camp),
+        detailItem('Location', person.location),
+        detailItem('Date', person.date || ScreeningStats.getScreeningDate(record)),
+        detailItem('Time', person.time),
+        detailItem('Payment', person.paymentMethod),
+        detailItem('Amount', ScreeningStats.formatMoney(ScreeningStats.getRecordAmount(record))),
+        detailItem('Updated', record.updatedAt || record.createdAt || '')
+      ].join('');
+
+      const tests = Array.isArray(record.tests) ? record.tests : [];
+      document.getElementById('viewTests').innerHTML = tests.length
+        ? tests.map(t => `<tr>
+            <td>${t.label || t.id || '—'}</td>
+            <td>${t.value || '—'}</td>
+            <td>${t.unit || '—'}</td>
+            <td>${ScreeningStats.formatMoney(t.price || 0)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="4" class="muted">No test rows stored.</td></tr>';
+
+      document.getElementById('viewModal').classList.add('open');
+    };
+
     window.openEdit = function(index) {
       const record = store.history[index];
       if (!record) return;
       const person = record.person || {};
       document.getElementById('editIndex').value = index;
+      document.getElementById('editId').value = record.id || '';
       document.getElementById('eName').value = person.name || '';
       document.getElementById('eContact').value = person.contact || '';
       document.getElementById('eEmail').value = person.email || '';
@@ -195,53 +346,90 @@
       document.getElementById('editModal').classList.add('open');
     };
 
-    function closeModal() {
+    function closeView() {
+      document.getElementById('viewModal').classList.remove('open');
+      viewingIndex = -1;
+    }
+    function closeEdit() {
       document.getElementById('editModal').classList.remove('open');
     }
 
-    document.getElementById('closeEdit').addEventListener('click', closeModal);
+    document.getElementById('closeView').addEventListener('click', closeView);
+    document.getElementById('closeEdit').addEventListener('click', closeEdit);
+    document.getElementById('viewModal').addEventListener('click', (e) => {
+      if (e.target.id === 'viewModal') closeView();
+    });
     document.getElementById('editModal').addEventListener('click', (e) => {
-      if (e.target.id === 'editModal') closeModal();
+      if (e.target.id === 'editModal') closeEdit();
     });
 
-    document.getElementById('saveEdit').addEventListener('click', () => {
+    document.getElementById('viewToEdit').addEventListener('click', () => {
+      if (viewingIndex < 0) return;
+      closeView();
+      openEdit(viewingIndex);
+    });
+
+    document.getElementById('viewToDelete').addEventListener('click', () => {
+      if (viewingIndex < 0) return;
+      const idx = viewingIndex;
+      closeView();
+      deleteRecord(idx);
+    });
+
+    document.getElementById('saveEdit').addEventListener('click', async () => {
       const index = Number(document.getElementById('editIndex').value);
       const record = store.history[index];
       if (!record) return;
-      record.person = record.person || {};
-      record.person.name = document.getElementById('eName').value.trim() || 'Unknown';
-      record.person.contact = document.getElementById('eContact').value.trim();
-      record.person.email = document.getElementById('eEmail').value.trim();
-      record.person.camp = document.getElementById('eCamp').value.trim();
-      record.person.location = document.getElementById('eLocation').value.trim();
-      record.person.age = document.getElementById('eAge').value.trim();
-      record.person.gender = document.getElementById('eGender').value;
-      record.person.paymentMethod = document.getElementById('ePayment').value;
-      record.person.date = document.getElementById('eDate').value;
-      record.person.time = document.getElementById('eTime').value.trim();
-      record.person.patientWa = document.getElementById('eWa').value.trim();
-      record.updatedAt = new Date().toISOString();
-      ScreeningStats.saveStore(store);
-      closeModal();
-      reload();
-      alert('Record updated. Home and Dashboard will show the new details.');
+
+      const btn = document.getElementById('saveEdit');
+      btn.disabled = true;
+      try {
+        record.person = record.person || {};
+        record.person.name = document.getElementById('eName').value.trim() || 'Unknown';
+        record.person.contact = document.getElementById('eContact').value.trim();
+        record.person.email = document.getElementById('eEmail').value.trim();
+        record.person.camp = document.getElementById('eCamp').value.trim();
+        record.person.location = document.getElementById('eLocation').value.trim();
+        record.person.age = document.getElementById('eAge').value.trim();
+        record.person.gender = document.getElementById('eGender').value;
+        record.person.paymentMethod = document.getElementById('ePayment').value;
+        record.person.date = document.getElementById('eDate').value;
+        record.person.time = document.getElementById('eTime').value.trim();
+        record.person.patientWa = document.getElementById('eWa').value.trim();
+        record.updatedAt = new Date().toISOString();
+
+        await ScreeningStats.upsertScreening(record);
+        store = ScreeningStats.loadStore();
+        closeEdit();
+        render();
+        toast(dbOnline ? 'Updated in PostgreSQL.' : 'Saved locally (DB offline).');
+      } catch (err) {
+        toast('Update failed: ' + (err.message || err), true);
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     document.getElementById('fullEdit').addEventListener('click', () => {
-      const index = Number(document.getElementById('editIndex').value);
-      const record = store.history[index];
-      if (!record) return;
-      window.location.href = `/?view=screening&edit=${encodeURIComponent(record.id)}`;
+      const id = document.getElementById('editId').value;
+      if (!id) return;
+      window.location.href = `/?view=screening&edit=${encodeURIComponent(id)}`;
     });
 
-    window.deleteRecord = function(index) {
+    window.deleteRecord = async function(index) {
       const record = store.history[index];
       if (!record) return;
       const name = record.person?.name || 'this record';
-      if (!confirm(`Delete ${name} (${record.id})? This cannot be undone and will update Home and Dashboard.`)) return;
-      store.history.splice(index, 1);
-      ScreeningStats.saveStore(store);
-      reload();
+      if (!confirm(`Delete ${name} (${record.id}) from the database?\n\nThis cannot be undone.`)) return;
+
+      try {
+        await ScreeningStats.deleteScreening(record.id);
+        store = ScreeningStats.loadStore();
+        render();
+        toast(dbOnline ? 'Deleted from PostgreSQL.' : 'Deleted locally (DB offline).');
+      } catch (err) {
+        toast('Delete failed: ' + (err.message || err), true);
+      }
     };
 
     ['searchBox', 'paymentFilter', 'dateFilter'].forEach(id => {
@@ -254,12 +442,16 @@
       document.getElementById('dateFilter').value = '';
       render();
     });
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      toast('Refreshing from database…');
+      syncAndReload();
+    });
 
     window.addEventListener('storage', (event) => {
       if (event.key === ScreeningStats.STORAGE_KEY) reload();
     });
 
-    render();
+    syncAndReload();
   </script>
 </body>
 </html>

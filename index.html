@@ -790,7 +790,7 @@
 
     function loadDashboardHistory() {
       try {
-        const saved = JSON.parse(localStorage.getItem(DASHBOARD_STORAGE_KEY) || '{}');
+        const saved = ScreeningStats.loadStore();
         screeningHistory = Array.isArray(saved.history) ? saved.history : [];
         screeningCounter = Number(saved.counter) || (screeningHistory.length + 1);
         campaignLocation = typeof saved.campaignLocation === 'string' ? saved.campaignLocation : '';
@@ -803,13 +803,28 @@
 
     function saveDashboardHistory() {
       try {
-        localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify({
+        ScreeningStats.saveStore({
           history: screeningHistory,
           counter: screeningCounter,
           campaignLocation
-        }));
+        });
       } catch (err) {
         console.warn('Dashboard history could not be saved', err);
+      }
+    }
+
+    async function syncDashboardFromPostgres() {
+      try {
+        const synced = await ScreeningStats.syncFromApi({ migrateIfLocal: true });
+        screeningHistory = Array.isArray(synced.history) ? synced.history : [];
+        screeningCounter = Number(synced.counter) || (screeningHistory.length + 1);
+        campaignLocation = typeof synced.campaignLocation === 'string' ? synced.campaignLocation : '';
+        if (campaignInput) campaignInput.value = campaignLocation;
+        updateDashboardStats();
+        return synced;
+      } catch (err) {
+        console.warn('PostgreSQL sync skipped', err);
+        return null;
       }
     }
 
@@ -2615,6 +2630,7 @@
 
     const pageParams = new URLSearchParams(window.location.search);
     const editId = pageParams.get('edit');
+
     if (editId) {
       const editIndex = screeningHistory.findIndex(item => item.id === editId);
       if (editIndex >= 0) {
@@ -2625,6 +2641,15 @@
     } else if (pageParams.get('view') === 'screening') {
       showScreening();
     }
+
+    syncDashboardFromPostgres().then(() => {
+      if (!editId) return;
+      // If edit target was missing locally but exists in Postgres, open it now
+      if (editingRecordIndex < 0) {
+        const editIndex = screeningHistory.findIndex(item => item.id === editId);
+        if (editIndex >= 0) window.editRecord(editIndex);
+      }
+    });
 
     const navScreening = document.getElementById('navScreening');
     if (navScreening) {

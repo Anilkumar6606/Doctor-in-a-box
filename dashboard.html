@@ -1077,8 +1077,7 @@
 
     function readHistory() {
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        return Array.isArray(saved.history) ? saved.history : [];
+        return ScreeningStats.loadStore().history;
       } catch (err) {
         return [];
       }
@@ -1903,7 +1902,9 @@
     }
 
     bindInteractions();
-    refreshDashboard(true);
+    ScreeningStats.syncFromApi({ migrateIfLocal: true })
+      .catch(() => null)
+      .finally(() => refreshDashboard(true));
     window.addEventListener("resize", drawAll);
   </script>
 </body>
