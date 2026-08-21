@@ -962,7 +962,7 @@
       });
     }
 
-    function compressImageForPdf(dataUrl, maxWidth = 1240, quality = 0.68) {
+    function compressImageForPdf(dataUrl, maxWidth = 3200, quality = 0.94) {
       return loadImageFromDataUrl(dataUrl).then(img => {
         const scale = Math.min(1, maxWidth / img.width);
         const canvas = document.createElement('canvas');
@@ -993,7 +993,7 @@
       const imgHeight = img.height * ratio;
       const x = (pageWidth - imgWidth) / 2;
       const y = margin;
-      pdf.addImage(jpegDataUrl, 'JPEG', x, y, imgWidth, imgHeight, undefined, 'FAST');
+      pdf.addImage(jpegDataUrl, 'JPEG', x, y, imgWidth, imgHeight, undefined, 'MEDIUM');
 
       const blob = pdf.output('blob');
       const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
@@ -1870,7 +1870,7 @@
 
         const baseWidth = templateImg.naturalWidth || templateImg.width;
         const baseHeight = templateImg.naturalHeight || templateImg.height;
-        const exportScale = 2;
+        const exportScale = 3;
         canvas.width = baseWidth * exportScale;
         canvas.height = baseHeight * exportScale;
         ctx.imageSmoothingEnabled = true;
