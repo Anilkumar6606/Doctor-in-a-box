@@ -212,7 +212,7 @@
       document.getElementById('dbHint').textContent = detail || (
         online
           ? 'View, Edit, and Delete update the shared database.'
-          : 'Start Flask (or use Render Web Service + Postgres). Static Netlify links will not share data.'
+          : 'On Render: add a PostgreSQL database and set DATABASE_URL on this Web Service, then Redeploy.'
       );
     }
 
@@ -223,9 +223,17 @@
 
     async function syncAndReload() {
       try {
+        let healthHint = '';
+        try {
+          const healthRes = await fetch('/api/health', { cache: 'no-store' });
+          const health = await healthRes.json().catch(() => ({}));
+          healthHint = health.hint || health.error || '';
+        } catch (err) {
+          healthHint = '';
+        }
         const ok = await ScreeningStats.checkApi();
         if (!ok) {
-          setDbStatus(false);
+          setDbStatus(false, healthHint);
           reload();
           return;
         }

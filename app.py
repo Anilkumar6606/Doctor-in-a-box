@@ -76,21 +76,33 @@ def next_screening_id():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
+    from database import database_url
+
+    uri = database_url()
+    using_localhost = 'localhost' in uri or '127.0.0.1' in uri
+    hint = ''
+    if using_localhost:
+        hint = (
+            'DATABASE_URL is missing on Render, so the app is trying localhost. '
+            'Create a Render PostgreSQL database, copy its Internal Database URL, '
+            'add it as DATABASE_URL on this Web Service, then redeploy.'
+        )
     try:
         db.session.execute(db.text('SELECT 1'))
         db_ok = True
     except Exception as exc:
-        db_ok = False
         return jsonify({
             'status': 'degraded',
             'message': 'Report server is running but database is unavailable',
             'database': False,
             'error': str(exc),
+            'hint': hint or 'Check DATABASE_URL and that the Render Postgres instance is running.',
         }), 503
     return jsonify({
         'status': 'ok',
         'message': 'Report server is running',
         'database': db_ok,
+        'hint': hint,
     })
 
 
