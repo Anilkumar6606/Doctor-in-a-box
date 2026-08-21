@@ -611,7 +611,8 @@
         <button class="btn btn-primary btn-sm" id="pdfDownloadBtn"><i class="fas fa-download"></i> PDF</button>
         <button class="btn btn-primary btn-sm" id="imageDownloadBtn"><i class="fas fa-image"></i> Image</button>
         <!-- SHARE VIA WHATSAPP BUTTON -->
-        <button class="btn btn-whatsapp btn-sm" id="whatsappShareBtn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+        <button class="btn btn-whatsapp btn-sm" id="whatsappShareBtn"><i class="fab fa-whatsapp"></i> WhatsApp Image</button>
+        <button class="btn btn-whatsapp btn-sm" id="whatsappPdfShareBtn"><i class="fab fa-whatsapp"></i> WhatsApp PDF</button>
       </div>
       <button class="btn btn-outline btn-block" id="backFromReport"><i class="fas fa-arrow-left"></i> Back to Screening</button>
     </div>
@@ -927,6 +928,79 @@
       );
     }
 
+    function buildWhatsAppReportMessage(person, id) {
+      return [
+        'THANK YOU FOR VISITING DOCTOR IN A BOX',
+        '',
+        'Doctor in a Box Health Screening Report',
+        '',
+        `Patient Name: ${person?.name || 'N/A'}`,
+        person?.age ? `Age: ${person.age}` : null,
+        person?.gender ? `Gender: ${person.gender}` : null,
+        `Report ID: ${id}`,
+        `Date: ${person?.date || ''} ${person?.time || ''}`.trim(),
+        person?.camp ? `Camp: ${person.camp}` : null,
+        person?.contact ? `Phone: ${person.contact}` : null,
+        '',
+        'Thank you for choosing Doctor in A Box for your health screening.',
+        '',
+        'We hope you stay healthy, happy, and well.',
+        'Your health is our priority, and we are always here to support you on your journey toward better health.',
+        '',
+        'Stay Healthy. Stay Safe. Stay Well.',
+        '',
+        'Doctor in A Box'
+      ].filter(line => line !== null).join('\n');
+    }
+
+    function loadImageFromDataUrl(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Could not load report image'));
+        img.src = dataUrl;
+      });
+    }
+
+    function compressImageForPdf(dataUrl, maxWidth = 1240, quality = 0.68) {
+      return loadImageFromDataUrl(dataUrl).then(img => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', quality);
+      });
+    }
+
+    async function buildCompressedReportPdf(dataUrl, filename) {
+      const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+      if (!JsPDF) throw new Error('PDF library not loaded');
+
+      const jpegDataUrl = await compressImageForPdf(dataUrl);
+      const img = await loadImageFromDataUrl(jpegDataUrl);
+      const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const maxWidth = pageWidth - (margin * 2);
+      const maxHeight = pageHeight - (margin * 2);
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+      const imgWidth = img.width * ratio;
+      const imgHeight = img.height * ratio;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = margin;
+      pdf.addImage(jpegDataUrl, 'JPEG', x, y, imgWidth, imgHeight, undefined, 'FAST');
+
+      const blob = pdf.output('blob');
+      const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+      const file = new File([blob], pdfFilename, { type: 'application/pdf' });
+      return { pdf, blob, file, filename: pdfFilename };
+    }
+
     function isLocalShareUrl(url) {
       try {
         const host = new URL(url).hostname;
@@ -936,18 +1010,19 @@
       }
     }
 
-    function showWhatsAppPasteGuide(copied, downloaded) {
+    function showWhatsAppPasteGuide(copied, downloaded, kind = 'image') {
+      const isPdf = kind === 'pdf';
       const guide = document.createElement('div');
       guide.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;z-index:10001;padding:16px;';
       guide.innerHTML = `
         <div style="background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.25);">
-          <h3 style="margin:0 0 12px;color:#0b2b4a;">Send the report image in WhatsApp</h3>
+          <h3 style="margin:0 0 12px;color:#0b2b4a;">Send the report ${isPdf ? 'PDF' : 'image'} in WhatsApp</h3>
           <p style="margin:0 0 16px;color:#4a6a85;line-height:1.5;font-size:0.92rem;">
-            WhatsApp is open with the patient number. Now attach the report image using one of these steps:
+            WhatsApp is open with the patient number. Now attach the report ${isPdf ? 'PDF' : 'image'} using one of these steps:
           </p>
           <ol style="margin:0 0 18px 18px;color:#0b2b4a;line-height:1.7;font-size:0.92rem;">
-            ${copied ? '<li>Click inside the WhatsApp chat box</li><li>Press <strong>Ctrl + V</strong> to paste the copied image</li><li>Press <strong>Send</strong></li>' : ''}
-            ${downloaded ? '<li>Click the <strong>attach clip icon</strong> in WhatsApp</li><li>Select the downloaded PNG report image</li><li>Press <strong>Send</strong></li>' : ''}
+            ${copied && !isPdf ? '<li>Click inside the WhatsApp chat box</li><li>Press <strong>Ctrl + V</strong> to paste the copied image</li><li>Press <strong>Send</strong></li>' : ''}
+            ${downloaded ? `<li>Click the <strong>attach clip icon</strong> in WhatsApp</li><li>Select the downloaded ${isPdf ? 'PDF' : 'PNG'} report</li><li>Press <strong>Send</strong></li>` : ''}
           </ol>
           <button type="button" id="waGuideDoneBtn" style="width:100%;border:0;background:#25D366;color:#fff;padding:12px 16px;border-radius:999px;font-weight:700;cursor:pointer;">
             Got it
@@ -1088,6 +1163,39 @@
         downloaded: true,
         shareUrl,
         showPasteGuide: !shareUrl || isLocalShareUrl(shareUrl)
+      };
+    }
+
+    async function deliverPdfToWhatsApp({ pdfFile, filename, message, phone }) {
+      const formattedPhone = formatWhatsAppPhone(phone);
+      const canSharePdf = canShareImageFile(pdfFile);
+
+      if (canSharePdf) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: filename,
+            text: message
+          });
+          return {
+            mode: 'native-share',
+            downloaded: false,
+            showPasteGuide: false
+          };
+        } catch (err) {
+          if (err.name === 'AbortError') throw err;
+        }
+      }
+
+      const url = URL.createObjectURL(pdfFile);
+      downloadImageFile(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+      window.open(buildWhatsAppUrl(formattedPhone, message), '_blank');
+      return {
+        mode: 'download',
+        downloaded: true,
+        showPasteGuide: true
       };
     }
 
@@ -1505,7 +1613,7 @@
       convertReportToImage().then(dataUrl => {
         const filename = `health-screening-${id}.png`;
         const imageFile = dataUrlToFile(dataUrl, filename);
-        const message = `Doctor in a Box Health Screening Report\n\nPatient: ${person.name}\nReport ID: ${id}\nDate: ${person.date} ${person.time}`;
+        const message = buildWhatsAppReportMessage(person, id);
         const canShareImage = canShareImageFile(imageFile);
         const formattedPhone = formatWhatsAppPhone(person.patientWa || person.contact);
         const shareHint = formattedPhone
@@ -1649,6 +1757,53 @@
         setTimeout(() => statusMsg.remove(), 3000);
       });
     }
+
+    async function sharePdfViaWhatsApp() {
+      if (!lastGeneratedReport) {
+        alert('Please generate a report first.');
+        return;
+      }
+
+      const { person, id } = lastGeneratedReport;
+      const statusMsg = startDownloadStatus('⏳ Preparing compressed PDF for WhatsApp...');
+      const filename = `health-screening-${id}.pdf`;
+      const message = buildWhatsAppReportMessage(person, id);
+      const formattedPhone = formatWhatsAppPhone(person.patientWa || person.contact);
+
+      try {
+        const dataUrl = await convertReportToImage();
+        const { file } = await buildCompressedReportPdf(dataUrl, filename);
+        const sizeKb = Math.max(1, Math.round(file.size / 1024));
+        const canSharePdf = canShareImageFile(file);
+
+        statusMsg.textContent = formattedPhone
+          ? `⏳ Sending ${sizeKb} KB PDF to WhatsApp...`
+          : `⏳ Opening WhatsApp with ${sizeKb} KB PDF...`;
+
+        const result = await deliverPdfToWhatsApp({
+          pdfFile: file,
+          filename,
+          message,
+          phone: formattedPhone
+        });
+
+        if (result.mode === 'native-share') {
+          statusMsg.textContent = `✅ PDF shared successfully (${sizeKb} KB)!`;
+        } else {
+          statusMsg.textContent = `✅ PDF downloaded (${sizeKb} KB). Attach it in WhatsApp.`;
+          showWhatsAppPasteGuide(false, true, 'pdf');
+        }
+        setTimeout(() => statusMsg.remove(), 7000);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          statusMsg.remove();
+          return;
+        }
+        console.error('WhatsApp PDF error:', err);
+        statusMsg.textContent = '❌ Error sharing PDF: ' + (err.message || err);
+        setTimeout(() => statusMsg.remove(), 4000);
+      }
+    }
     function loadImage(src) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -1715,7 +1870,7 @@
 
         const baseWidth = templateImg.naturalWidth || templateImg.width;
         const baseHeight = templateImg.naturalHeight || templateImg.height;
-        const exportScale = 3;
+        const exportScale = 2;
         canvas.width = baseWidth * exportScale;
         canvas.height = baseHeight * exportScale;
         ctx.imageSmoothingEnabled = true;
@@ -2324,31 +2479,17 @@
         return;
       }
 
-      exportScreeningToImageWithPreview(screening).then(dataUrl => {
-        const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 8;
-        const maxWidth = pageWidth - (margin * 2);
-        const maxHeight = pageHeight - (margin * 2);
-
-        const img = new Image();
-        img.onload = () => {
-          const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
-          const imgWidth = img.width * ratio;
-          const imgHeight = img.height * ratio;
-          const x = (pageWidth - imgWidth) / 2;
-          const y = margin;
-          pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
-          pdf.save(`history-${screening.id || 'report'}.pdf`);
+      exportScreeningToImageWithPreview(screening).then(async dataUrl => {
+        try {
+          const { pdf, filename } = await buildCompressedReportPdf(dataUrl, `history-${screening.id || 'report'}.pdf`);
+          pdf.save(filename);
           statusMsg.textContent = '✅ PDF downloaded successfully!';
           setTimeout(() => statusMsg.remove(), 3000);
-        };
-        img.onerror = () => {
+        } catch (err) {
+          console.error('History PDF error:', err);
           statusMsg.textContent = '❌ Error generating PDF';
           setTimeout(() => statusMsg.remove(), 3000);
-        };
-        img.src = dataUrl;
+        }
       }).catch(err => {
         console.error('History PDF error:', err);
         statusMsg.textContent = '❌ Error generating PDF';
@@ -2508,6 +2649,7 @@
     attachListener('resetScreeningBtn', showDashboard);
     attachListener('generateReportBtn', generateReport);
     attachListener('whatsappShareBtn', shareViaWhatsApp);
+    attachListener('whatsappPdfShareBtn', sharePdfViaWhatsApp);
 
     const backBtn = document.getElementById('backFromReport');
     if (backBtn) {
@@ -2546,31 +2688,14 @@
           return;
         }
 
-        convertReportToImage().then(dataUrl => {
-          const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
-          const margin = 8;
-          const maxWidth = pageWidth - (margin * 2);
-          const maxHeight = pageHeight - (margin * 2);
-
-          const img = new Image();
-          img.onload = () => {
-            const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
-            const imgWidth = img.width * ratio;
-            const imgHeight = img.height * ratio;
-            const x = (pageWidth - imgWidth) / 2;
-            const y = margin;
-
-            pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
-            pdf.save(`health-screening-${lastGeneratedReport?.id || 'report'}.pdf`);
-            statusMsg.textContent = '✅ PDF downloaded successfully!';
-            setTimeout(() => statusMsg.remove(), 3000);
-          };
-          img.onerror = () => {
-            throw new Error('Could not load generated report image for PDF');
-          };
-          img.src = dataUrl;
+        convertReportToImage().then(async dataUrl => {
+          const { pdf, filename } = await buildCompressedReportPdf(
+            dataUrl,
+            `health-screening-${lastGeneratedReport?.id || 'report'}.pdf`
+          );
+          pdf.save(filename);
+          statusMsg.textContent = '✅ PDF downloaded successfully!';
+          setTimeout(() => statusMsg.remove(), 3000);
         }).catch(err => {
           console.error('PDF error:', err);
           statusMsg.textContent = '❌ Error generating PDF';

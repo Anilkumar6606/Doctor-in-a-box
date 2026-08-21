@@ -28,6 +28,7 @@
     .btn { border: 0; background: #eef4fa; color: #0b2b4a; padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
     .btn:disabled { opacity: 0.55; cursor: wait; }
     .btn-primary { background: #0b2b4a; color: #fff; }
+    .btn-excel { background: #217346; color: #fff; }
     .btn-view { background: #0b2b4a; color: #fff; }
     .btn-edit { background: #1677ff; color: #fff; }
     .btn-delete { background: #ff4d4f; color: #fff; }
@@ -98,6 +99,7 @@
         </select>
         <input id="dateFilter" type="date">
         <button class="btn" id="clearFilters"><i class="fas fa-rotate-left"></i> Clear</button>
+        <button class="btn btn-excel" id="exportExcelBtn" type="button"><i class="fas fa-file-excel"></i> Export Excel</button>
       </div>
       <div class="muted" id="countLabel" style="margin-bottom:10px;"></div>
       <div class="table-wrap">
@@ -188,6 +190,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="screening-stats.js"></script>
   <script>
     let store = ScreeningStats.loadStore();
@@ -450,6 +453,76 @@
       document.getElementById('dateFilter').value = '';
       render();
     });
+
+    function formatTestNames(record) {
+      const tests = Array.isArray(record.tests) ? record.tests : [];
+      if (!tests.length) return ScreeningStats.selectedTestIds(record).join(', ');
+      return tests.map(t => t.label || t.name || t.id || '').filter(Boolean).join(', ');
+    }
+
+    function formatTestResults(record) {
+      const tests = Array.isArray(record.tests) ? record.tests : [];
+      return tests.map(t => {
+        const name = t.label || t.name || t.id || 'Test';
+        const value = Array.isArray(t.resultLines)
+          ? t.resultLines.join(' / ')
+          : (t.value ?? '');
+        const unit = t.unit ? ` ${t.unit}` : '';
+        return `${name}: ${value}${unit}`.trim();
+      }).filter(Boolean).join(' | ');
+    }
+
+    function exportRecordsToExcel() {
+      const list = filtered();
+      if (!list.length) {
+        toast('No records to export.', true);
+        return;
+      }
+      if (typeof XLSX === 'undefined') {
+        toast('Excel library failed to load. Refresh the page.', true);
+        return;
+      }
+
+      const rows = list.map(({ record }) => {
+        const person = record.person || {};
+        return {
+          'Report ID': record.id || '',
+          'Name': person.name || '',
+          'Phone': person.contact || '',
+          'WhatsApp': person.patientWa || '',
+          'Email': person.email || '',
+          'Age': person.age || '',
+          'Gender': person.gender || '',
+          'Date': person.date || ScreeningStats.getScreeningDate(record) || '',
+          'Time': person.time || '',
+          'Camp': person.camp || '',
+          'Location': person.location || '',
+          'Payment Method': person.paymentMethod || '',
+          'Tests': formatTestNames(record),
+          'Test Results': formatTestResults(record),
+          'Amount': ScreeningStats.getRecordAmount(record),
+          'Created At': record.createdAt || '',
+          'Updated At': record.updatedAt || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      worksheet['!cols'] = [
+        { wch: 16 }, { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 24 },
+        { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 18 },
+        { wch: 18 }, { wch: 12 }, { wch: 28 }, { wch: 40 }, { wch: 10 },
+        { wch: 20 }, { wch: 20 }
+      ];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Records');
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      const filename = `doctor-in-a-box-records-${stamp}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      toast(`Exported ${rows.length} record(s) to Excel.`);
+    }
+
+    document.getElementById('exportExcelBtn').addEventListener('click', exportRecordsToExcel);
     document.getElementById('refreshBtn').addEventListener('click', () => {
       toast('Refreshing from database…');
       syncAndReload();
