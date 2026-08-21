@@ -476,6 +476,7 @@ def generate_image():
         total_y = table_y + header_h + (len(rows) * row_h) + 32
         fit_text(table_x + 18, total_y, 'Total Amount', font(17, True), 220)
         fit_text(table_x + 844, total_y, money(rendered_total).replace('Rs. ', ''), font(17, True), 66)
+        fit_text(table_x + 18, total_y + 40, 'For any queries Call us: 9010566626', font(16, True), 780, color=teal)
 
         img_byte_arr = BytesIO()
         img.save(img_byte_arr, format='PNG', quality=95)

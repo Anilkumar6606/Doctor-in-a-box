@@ -604,7 +604,8 @@
         </div>
         <div id="reportCards"></div>
         <div style="margin-top:20px; border-top:1px dashed #d0e0ed; padding-top:16px; text-align:center; font-size:0.75rem; color:#3a6885;">
-          Screening performed by Doctor in a Box · Informational purposes only
+          Screening performed by Doctor in a Box · Informational purposes only<br>
+          For any queries Call us: <strong>9010566626</strong>
         </div>
       </div>
       <div class="flex" style="gap:8px; flex-wrap:wrap; margin:12px 0;">
@@ -948,6 +949,8 @@
         'Your health is our priority, and we are always here to support you on your journey toward better health.',
         '',
         'Stay Healthy. Stay Safe. Stay Well.',
+        '',
+        'For any queries Call us: 9010566626',
         '',
         'Doctor in A Box'
       ].filter(line => line !== null).join('\n');
@@ -2126,6 +2129,7 @@
         const totalY = tableY + headerH + tableBodyH + 32;
         at(tableX + 18, totalY, 220, 'Total Amount', font(17, 800), textColor);
         at(tableX + 844, totalY, 66, money(reportData.amount ?? computedTotal).replace('Rs. ', ''), font(17, 800), textColor);
+        at(tableX + 18, totalY + 40, 780, 'For any queries Call us: 9010566626', font(16, 800), teal);
 
         return canvas.toDataURL('image/png');
       });
@@ -2331,9 +2335,12 @@
           ctx.fillStyle = '#0b2b4a';
           ctx.font = '700 18px Arial';
           ctx.fillText('ℹ️ This report is generated for informational purposes only. Please consult a doctor for medical advice.', pagePadding + 18, canvas.height - 120);
+          ctx.fillStyle = '#00756f';
+          ctx.font = '700 16px Arial';
+          ctx.fillText('📞 For any queries Call us: 9010566626', pagePadding + 18, canvas.height - 90);
           ctx.fillStyle = '#4a6885';
           ctx.font = '600 16px Arial';
-          ctx.fillText('🏢 Office Details: 4th Floor, Metro Station Madhapur, Q-Hub, near Madhapur, Hyderabad, Telangana 500033', pagePadding + 18, canvas.height - 80);
+          ctx.fillText('🏢 Office Details: 4th Floor, Metro Station Madhapur, Q-Hub, near Madhapur, Hyderabad, Telangana 500033', pagePadding + 18, canvas.height - 60);
 
           const dataUrl = canvas.toDataURL('image/png');
           resolve(dataUrl);
@@ -2484,6 +2491,7 @@
           </div>
 
           <div class="rr-note"><b>ℹ️ Note:</b> This report is generated for informational purposes only. Please consult a doctor for medical advice.</div>
+          <div class="rr-office"><b>📞 For any queries Call us:</b> 9010566626</div>
           <div class="rr-office"><b>🏢 Office Details:</b> 4th Floor, Metro Station Madhapur, Q-Hub, near Madhapur, Hyderabad, Telangana 500033</div>
         </div>
       `;
