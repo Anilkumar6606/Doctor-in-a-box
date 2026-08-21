@@ -417,7 +417,8 @@ def generate_image():
         draw_info_line(72, card_y + 68, 'Name', person.get('name') or 'Unknown', 90, 300)
         draw_info_line(72, card_y + 102, 'Gender/Age', gender_age, 90, 300)
         draw_info_line(72, card_y + 136, 'Mobile', person.get('contact') or '—', 90, 300)
-        draw_info_line(72, card_y + 170, 'Email', person.get('email') or '—', 90, 300)
+        email_text = person.get('email') or '—'
+        draw_info_line(72, card_y + 170, 'Email', email_text, 90, 300)
 
         draw_info_line(552, card_y + 68, 'Patient ID', report_id, 112, 270)
         draw_info_line(552, card_y + 102, 'Date', person.get('date') or '—', 112, 270)
@@ -476,7 +477,6 @@ def generate_image():
         total_y = table_y + header_h + (len(rows) * row_h) + 32
         fit_text(table_x + 18, total_y, 'Total Amount', font(17, True), 220)
         fit_text(table_x + 844, total_y, money(rendered_total).replace('Rs. ', ''), font(17, True), 66)
-        fit_text(table_x + 18, total_y + 40, 'For any queries Call us: 9010566626', font(16, True), 780, color=teal)
 
         img_byte_arr = BytesIO()
         img.save(img_byte_arr, format='PNG', quality=95)
